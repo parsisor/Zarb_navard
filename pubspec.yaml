@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.4.3 <4.0.0'
 
 dependencies:
+  flame: ^1.19.0
   flutter:
     sdk: flutter
 
@@ -16,4 +17,10 @@ dev_dependencies:
   flutter_lints: ^3.0.0
 
 flutter:
+
+
+  assets:
+  - assets/images/
+  - assets/audio/
+  - assets/titles/
   uses-material-design: true
