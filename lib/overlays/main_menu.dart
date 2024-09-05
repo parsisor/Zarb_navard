@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../ember_quest.dart';
 
 class MainMenu extends StatelessWidget {
-  // Reference to parent game.
   final EmberQuestGame game;
 
   const MainMenu({required this.game, super.key});

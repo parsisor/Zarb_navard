@@ -6,12 +6,24 @@ import '../objects/platform_block.dart';
 import '../objects/star.dart';
 
 class Block {
-  // gridPosition position is always segment based X,Y.
-  // 0,0 is the bottom left corner.
-  // 10,10 is the upper right corner.
   final Vector2 gridPosition;
   final Type blockType;
+  
   Block(this.gridPosition, this.blockType);
+
+  Component createComponent(double xOffset) {
+    if (blockType == GroundBlock) {
+      return GroundBlock(gridPosition: gridPosition, xOffset: xOffset);
+    } else if (blockType == PlatformBlock) {
+      return PlatformBlock(gridPosition: gridPosition, xOffset: xOffset);
+    } else if (blockType == Star) {
+      return Star(gridPosition: gridPosition, xOffset: xOffset);
+    } else if (blockType == WaterEnemy) {
+      return WaterEnemy(gridPosition: gridPosition, xOffset: xOffset);
+    } else {
+      throw UnimplementedError('Unknown block type: $blockType');
+    }
+  }
 }
 
 final segments = [

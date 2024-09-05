@@ -63,10 +63,12 @@ class EmberPlayer extends SpriteAnimationComponent
   void update(double dt) {
     velocity.x = horizontalDirection * moveSpeed;
     game.objectSpeed = 0;
+
     // Prevent ember from going backwards at screen edge.
     if (position.x - 36 <= 0 && horizontalDirection < 0) {
       velocity.x = 0;
     }
+
     // Prevent ember from going beyond half screen.
     if (position.x + 64 >= game.size.x / 2 && horizontalDirection > 0) {
       velocity.x = 0;
@@ -77,15 +79,13 @@ class EmberPlayer extends SpriteAnimationComponent
     velocity.y += gravity;
 
     // Determine if ember has jumped.
-    if (hasJumped) {
-      if (isOnGround) {
-        velocity.y = -jumpSpeed;
-        isOnGround = false;
-      }
+    if (hasJumped && isOnGround) {
+      velocity.y = -jumpSpeed;
+      isOnGround = false;
       hasJumped = false;
     }
 
-    // Prevent ember from jumping to crazy fast.
+    // Prevent ember from jumping too fast.
     velocity.y = velocity.y.clamp(-jumpSpeed, terminalVelocity);
 
     // Adjust ember position.
@@ -151,17 +151,20 @@ class EmberPlayer extends SpriteAnimationComponent
     if (!hitByEnemy) {
       game.health--;
       hitByEnemy = true;
+
+      // Set ember as invincible during the blinking effect.
+      add(
+        OpacityEffect.fadeOut(
+          EffectController(
+            alternate: true,
+            duration: 0.1,
+            repeatCount: 5,
+          ),
+        )..onComplete = () {
+            // Reset the hitByEnemy flag to allow jumping after the effect completes.
+            hitByEnemy = false;
+          },
+      );
     }
-    add(
-      OpacityEffect.fadeOut(
-        EffectController(
-          alternate: true,
-          duration: 0.1,
-          repeatCount: 5,
-        ),
-      )..onComplete = () {
-          hitByEnemy = false;
-        },
-    );
   }
 }
