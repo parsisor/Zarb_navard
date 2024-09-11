@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class Obstacle extends PositionComponent with HasGameRef {
   final double width;
   final double height;
-  final double speed; // Speed at which the obstacle moves towards the white rectangle
+  double speed; // Speed at which the obstacle moves towards the white rectangle
 
   Obstacle({
     this.width = 20.0,

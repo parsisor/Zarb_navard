@@ -1,10 +1,18 @@
+// main.dart
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
-import 'char.dart';   // Import the updated char.dart file
-import 'ground.dart'; // Import the ground.dart file
-import 'obstacle.dart'; // Import the obstacle.dart file
-import 'game.dart'; // Import the newly created game.dart file
+import 'game.dart'; // Import the renamed ZarbGame
+import 'overlay.dart'; // Import the overlay code
 
 void main() {
-  runApp(GameWidget(game: ZarbGame()));
+  runApp(
+    GameWidget<ZarbGame>(
+      game: ZarbGame(),
+      overlayBuilderMap: {
+        'MultiplicationOverlay': (context, game) => MultiplicationOverlay(game: game as ZarbGame),
+        'LossOverlay': (context, game) => LossOverlay(game: game as ZarbGame), // Add the LossOverlay
+      },
+      initialActiveOverlays: [],
+    ),
+  );
 }

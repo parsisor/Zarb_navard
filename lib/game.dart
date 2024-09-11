@@ -1,48 +1,113 @@
-import 'dart:async'; // Import dart:async to use Timer
-import 'dart:math'; // Import dart:math for random number generation
+// game.dart
+
+import 'dart:async';
+import 'dart:math';
 import 'package:flame/game.dart';
-import 'char.dart';   // Import the updated char.dart file
-import 'ground.dart'; // Import the ground.dart file
-import 'obstacle.dart'; // Import the obstacle.dart file
+import 'char.dart';
+import 'ground.dart';
+import 'obstacle.dart';
+import 'collision.dart';
 
 class ZarbGame extends FlameGame {
-  Timer? obstacleTimer; // Timer for obstacle spawning
-  final Random random = Random(); // Random number generator
+  Timer? obstacleTimer;
+  final Random random = Random();
+  String currentProblem = "";
+  List<int> answerOptions = [];
+  late int correctAnswer;
+  bool isCollisionHandled = false;
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
-    // Add the WhiteRectangle component with custom dimensions and margins
-    add(WhiteRectangle(width: 60.0, height: 100.0, leftMargin: 60.0, bottomMargin: 150.0)); // Adjust the margins as needed
+    final player = WhiteRectangle(
+      width: 60.0,
+      height: 100.0,
+      leftMargin: 60.0,
+      bottomMargin: 150.0,
+    );
+    add(player);
 
-    // Add the Ground component with height and margins
-    add(Ground(height: 150.0, leftMargin: 0.0, rightMargin: 0.0)); // Adjust height and margins as needed
+    add(Ground(
+      height: 150.0,
+      leftMargin: 0.0,
+      rightMargin: 0.0,
+    ));
 
-    // Start spawning obstacles
+    add(CollisionDetection(player));
+
     startObstacleSpawning();
   }
 
-  // Function to start spawning obstacles periodically
   void startObstacleSpawning() {
     spawnObstacleWithRandomDelay();
   }
 
-  // Function to spawn obstacles with a random delay of at least 5 seconds
   void spawnObstacleWithRandomDelay() {
-    // Randomize delay with a minimum of 5 seconds and add a random value up to 3 seconds (adjustable)
-    int randomDelay = 5000 + random.nextInt(3000); // 5000ms (5s) minimum + 0 to 3000ms (0 to 3s) random
-
-    // Set up a timer to spawn an obstacle after the randomized delay
+    int randomDelay = 5000 + random.nextInt(5000);
     obstacleTimer = Timer(Duration(milliseconds: randomDelay), () {
-      add(Obstacle(width: 30.0, height: 60.0, speed: 200.0)); // Customize obstacle size and speed as needed
-      // Schedule the next obstacle with another random delay
+      add(Obstacle(
+        width: 30.0,
+        height: 100.0,
+        speed: 200.0,
+      ));
       spawnObstacleWithRandomDelay();
     });
   }
 
+  void generateNewProblem() {
+    int num1 = random.nextInt(8) + 1;
+    int num2 = random.nextInt(8) + 1;
+    correctAnswer = num1 * num2;
+    currentProblem = '$num1 × $num2 = ?';
+
+    answerOptions = [correctAnswer];
+    while (answerOptions.length < 4) {
+      int wrongAnswer = random.nextInt(100);
+      if (!answerOptions.contains(wrongAnswer)) {
+        answerOptions.add(wrongAnswer);
+      }
+    }
+    answerOptions.shuffle();
+    
+  }
+
+  void pauseGame() {
+    for (final obstacle in children.whereType<Obstacle>()) {
+      obstacle.speed = 0;
+    }
+  }
+
+  void resumeGame() {
+    for (final obstacle in children.whereType<Obstacle>()) {
+      obstacle.speed = 200;
+    }
+  }
+
+  void resetGameAfterCorrectAnswer() {
+    overlays.remove('MultiplicationOverlay');   
+    resumeGame();
+
+  }
+
+  bool checkAnswer(int answer) {
+    if (answer == correctAnswer) {
+      resetGameAfterCorrectAnswer();
+      return true;
+    } else {
+      pauseGame();
+      overlays.add('LossOverlay');
+      return false;
+    }
+  }
+
+  void reset() {
+    overlays.remove('LossOverlay');
+    isCollisionHandled = false;
+    resumeGame();
+  }
+
   @override
   void onRemove() {
-    // Cancel the timer when the game is removed
     obstacleTimer?.cancel();
     super.onRemove();
   }
