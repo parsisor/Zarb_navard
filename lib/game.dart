@@ -7,6 +7,7 @@ import 'char.dart';
 import 'ground.dart';
 import 'obstacle.dart';
 import 'collision.dart';
+import 'timer_bar.dart'; // Import the TimerBar
 
 class ZarbGame extends FlameGame {
   Timer? obstacleTimer;
@@ -15,6 +16,7 @@ class ZarbGame extends FlameGame {
   List<int> answerOptions = [];
   late int correctAnswer;
   bool isCollisionHandled = false;
+  TimerBar? timerBar; // Declare the timer bar as nullable
 
   @override
   Future<void> onLoad() async {
@@ -39,7 +41,6 @@ class ZarbGame extends FlameGame {
   }
 
   void startObstacleSpawning() {
-    // Spawn an obstacle immediately and then start the timer for subsequent spawns
     spawnObstacle();
     spawnObstacleWithRandomDelay();
   }
@@ -61,7 +62,6 @@ class ZarbGame extends FlameGame {
   }
 
   void stopObstacleSpawning() {
-    // Stop obstacle spawning when answering questions
     obstacleTimer?.cancel();
   }
 
@@ -85,19 +85,21 @@ class ZarbGame extends FlameGame {
     for (final obstacle in children.whereType<Obstacle>()) {
       obstacle.speed = 0;
     }
-    stopObstacleSpawning(); // Stop spawning new obstacles when the game is paused
+    stopObstacleSpawning();
   }
 
   void resumeGame() {
     for (final obstacle in children.whereType<Obstacle>()) {
       obstacle.speed = 200;
     }
-    startObstacleSpawning(); // Restart spawning obstacles immediately when the game resumes
+    startObstacleSpawning();
   }
 
   void resetGameAfterCorrectAnswer() {
     overlays.remove('MultiplicationOverlay');
     resumeGame();
+    timerBar?.removeFromParent(); // Remove the timer bar when the game resumes
+    timerBar = null; // Clear the reference
   }
 
   bool checkAnswer(int answer) {
@@ -116,13 +118,29 @@ class ZarbGame extends FlameGame {
     isCollisionHandled = false;
     resumeGame();
     clearObstacles();
+    timerBar?.removeFromParent(); // Ensure the timer bar is removed when resetting
+    timerBar = null;
   }
 
   void clearObstacles() {
-    // Remove all Obstacle components from the game
     children.whereType<Obstacle>().forEach((obstacle) {
       obstacle.removeFromParent();
     });
+  }
+
+  void handleCollision() {
+    isCollisionHandled = true;
+    pauseGame();
+    generateNewProblem();
+    overlays.add('MultiplicationOverlay');
+
+    // Start or reset the timer bar specifically on collision
+    if (timerBar == null) {
+      timerBar = TimerBar(totalTime: 4); // Initialize the timer bar with 4 seconds
+      add(timerBar!); // Add the timer bar to the game on collision
+    } else {
+      timerBar!.resetTimer(); // Reset the timer bar if it already exists
+    }
   }
 
   @override

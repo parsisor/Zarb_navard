@@ -18,21 +18,7 @@ class CollisionDetection extends Component with HasGameRef<ZarbGame> {
     for (final obstacle in gameRef.children.whereType<Obstacle>()) {
       if (player.toRect().overlaps(obstacle.toRect()) &&
           !gameRef.isCollisionHandled) {
-        // Set collision flag to true
-        gameRef.isCollisionHandled = true;
-
-        // Pause all obstacles
-        for (final obs in gameRef.children.whereType<Obstacle>()) {
-          obs.speed = 0; // Set speed to 0 to pause the obstacles
-        }
-
-        // Trigger the multiplication problem generation from game.dart
-        gameRef.generateNewProblem(); // Generate a problem only on collision
-        gameRef.overlays.add('MultiplicationOverlay'); // Show the overlay
-        gameRef.stopObstacleSpawning();
-
-        
-
+        gameRef.handleCollision(); // Use handleCollision to centralize the logic
         break; // Stop checking once a collision is detected
       }
     }
@@ -42,7 +28,7 @@ class CollisionDetection extends Component with HasGameRef<ZarbGame> {
 
   void checkObstacleLeftScreenBoundary() {
     for (final obstacle in gameRef.children.whereType<Obstacle>()) {
-      if (obstacle.x <= 0) {
+      if (obstacle.x <= 0) {   
         // Set isCollisionHandled to false if any obstacle hits the left screen boundary
         gameRef.isCollisionHandled = false;
 
