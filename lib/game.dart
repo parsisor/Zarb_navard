@@ -39,19 +39,30 @@ class ZarbGame extends FlameGame {
   }
 
   void startObstacleSpawning() {
+    // Spawn an obstacle immediately and then start the timer for subsequent spawns
+    spawnObstacle();
     spawnObstacleWithRandomDelay();
   }
 
   void spawnObstacleWithRandomDelay() {
-    int randomDelay = 5000 + random.nextInt(5000);
+    int randomDelay = 3000 + random.nextInt(2000);
     obstacleTimer = Timer(Duration(milliseconds: randomDelay), () {
-      add(Obstacle(
-        width: 30.0,
-        height: 100.0,
-        speed: 200.0,
-      ));
+      spawnObstacle();
       spawnObstacleWithRandomDelay();
     });
+  }
+
+  void spawnObstacle() {
+    add(Obstacle(
+      width: 30.0,
+      height: 100.0,
+      speed: 200.0,
+    ));
+  }
+
+  void stopObstacleSpawning() {
+    // Stop obstacle spawning when answering questions
+    obstacleTimer?.cancel();
   }
 
   void generateNewProblem() {
@@ -68,25 +79,25 @@ class ZarbGame extends FlameGame {
       }
     }
     answerOptions.shuffle();
-    
   }
 
   void pauseGame() {
     for (final obstacle in children.whereType<Obstacle>()) {
       obstacle.speed = 0;
     }
+    stopObstacleSpawning(); // Stop spawning new obstacles when the game is paused
   }
 
   void resumeGame() {
     for (final obstacle in children.whereType<Obstacle>()) {
       obstacle.speed = 200;
     }
+    startObstacleSpawning(); // Restart spawning obstacles immediately when the game resumes
   }
 
   void resetGameAfterCorrectAnswer() {
-    overlays.remove('MultiplicationOverlay');   
+    overlays.remove('MultiplicationOverlay');
     resumeGame();
-
   }
 
   bool checkAnswer(int answer) {
@@ -104,6 +115,14 @@ class ZarbGame extends FlameGame {
     overlays.remove('LossOverlay');
     isCollisionHandled = false;
     resumeGame();
+    clearObstacles();
+  }
+
+  void clearObstacles() {
+    // Remove all Obstacle components from the game
+    children.whereType<Obstacle>().forEach((obstacle) {
+      obstacle.removeFromParent();
+    });
   }
 
   @override

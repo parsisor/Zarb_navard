@@ -20,7 +20,7 @@ class Obstacle extends PositionComponent with HasGameRef {
     size = Vector2(width, height);
     
     // Position the obstacle just outside the right side of the screen
-    final gameWidth = gameRef.size.x;
+    final gameWidth = gameRef.size.x ;
     final groundHeight = gameRef.size.y - 150.0; // Height of the ground from bottom
 
     // Position obstacle just outside the right border of the screen
