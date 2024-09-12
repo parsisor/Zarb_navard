@@ -47,10 +47,7 @@ class MultiplicationOverlay extends StatelessWidget {
                   if (game.checkAnswer(answer)) {
                     game.overlays.remove('MultiplicationOverlay'); // Hide the overlay if correct
                     game.generateNewProblem(); // Generate a new problem after a correct answer
-                  } else {
-                    game.overlays.remove('MultiplicationOverlay'); // Hide the current overlay
-                    game.overlays.add('LossOverlay'); // Show the loss overlay
-                  }
+                  } 
                 },
                 child: CircleAvatar(
                   radius: 30.0,

@@ -7,7 +7,8 @@ import 'char.dart';
 import 'ground.dart';
 import 'obstacle.dart';
 import 'collision.dart';
-import 'timer_bar.dart'; // Import the TimerBar
+import 'timer_bar.dart';
+import 'lives_display.dart'; // Import the LivesDisplay component
 
 class ZarbGame extends FlameGame {
   Timer? obstacleTimer;
@@ -16,7 +17,9 @@ class ZarbGame extends FlameGame {
   List<int> answerOptions = [];
   late int correctAnswer;
   bool isCollisionHandled = false;
-  TimerBar? timerBar; // Declare the timer bar as nullable
+  TimerBar? timerBar;
+  int lives = 3; // Initialize lives to 3
+  LivesDisplay? livesDisplay; // Reference to the lives display
 
   @override
   Future<void> onLoad() async {
@@ -36,6 +39,9 @@ class ZarbGame extends FlameGame {
     ));
 
     add(CollisionDetection(player));
+
+    livesDisplay = LivesDisplay(lives: lives); // Initialize lives display
+    add(livesDisplay!); // Add lives display to the game
 
     startObstacleSpawning();
   }
@@ -98,8 +104,8 @@ class ZarbGame extends FlameGame {
   void resetGameAfterCorrectAnswer() {
     overlays.remove('MultiplicationOverlay');
     resumeGame();
-    timerBar?.removeFromParent(); // Remove the timer bar when the game resumes
-    timerBar = null; // Clear the reference
+    timerBar?.removeFromParent();
+    timerBar = null;
   }
 
   bool checkAnswer(int answer) {
@@ -107,10 +113,34 @@ class ZarbGame extends FlameGame {
       resetGameAfterCorrectAnswer();
       return true;
     } else {
-      pauseGame();
-      overlays.add('LossOverlay');
+      loseLife(); // Lose a life when the wrong answer is chosen
       return false;
     }
+  }
+
+  void loseLife() {
+    lives--; // Decrement lives
+    livesDisplay?.updateLives(lives); // Update the lives display
+    if (lives <= 0) {
+      gameOver(); // Trigger game over when lives reach 0
+    } else {
+      resetGameAfterIncorrectAnswer(); // Continue game after losing a life
+    }
+  }
+
+  void resetGameAfterIncorrectAnswer() {
+    overlays.remove('MultiplicationOverlay');
+    for (final obstacle in children.whereType<Obstacle>()) {
+      obstacle.speed = 200;
+    }
+    timerBar?.removeFromParent();
+    timerBar = null;
+  }
+
+  void gameOver() {
+    pauseGame();
+    overlays.remove('MultiplicationOverlay');
+    overlays.add('LossOverlay'); // Show the loss overlay when lives are 0
   }
 
   void reset() {
@@ -118,7 +148,9 @@ class ZarbGame extends FlameGame {
     isCollisionHandled = false;
     resumeGame();
     clearObstacles();
-    timerBar?.removeFromParent(); // Ensure the timer bar is removed when resetting
+    lives = 3; // Reset lives to 3
+    livesDisplay?.updateLives(lives); // Reset the lives display
+    timerBar?.removeFromParent();
     timerBar = null;
   }
 
@@ -134,12 +166,11 @@ class ZarbGame extends FlameGame {
     generateNewProblem();
     overlays.add('MultiplicationOverlay');
 
-    // Start or reset the timer bar specifically on collision
     if (timerBar == null) {
-      timerBar = TimerBar(totalTime: 4); // Initialize the timer bar with 4 seconds
-      add(timerBar!); // Add the timer bar to the game on collision
+      timerBar = TimerBar(totalTime: 4);
+      add(timerBar!);
     } else {
-      timerBar!.resetTimer(); // Reset the timer bar if it already exists
+      timerBar!.resetTimer();
     }
   }
 

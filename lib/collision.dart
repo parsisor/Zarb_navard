@@ -19,6 +19,8 @@ class CollisionDetection extends Component with HasGameRef<ZarbGame> {
       if (player.toRect().overlaps(obstacle.toRect()) &&
           !gameRef.isCollisionHandled) {
         gameRef.handleCollision(); // Use handleCollision to centralize the logic
+
+        
         break; // Stop checking once a collision is detected
       }
     }

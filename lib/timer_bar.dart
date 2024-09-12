@@ -2,9 +2,9 @@
 
 import 'package:flame/components.dart';
 import 'package:flame/palette.dart';
-import 'package:flutter/material.dart';
+import 'game.dart'; // Make sure this is importing ZarbGame
 
-class TimerBar extends PositionComponent with HasGameRef {
+class TimerBar extends PositionComponent with HasGameRef<ZarbGame> {
   final double totalTime;
   double elapsedTime = 0;
   late RectangleComponent outerBar;
@@ -43,12 +43,10 @@ class TimerBar extends PositionComponent with HasGameRef {
     double remainingTimePercentage = (totalTime - elapsedTime) / totalTime;
     innerBar.size.x = outerBar.size.x * remainingTimePercentage;
 
-    // Reset the timer bar if time runs out
+    // Check if time runs out
     if (elapsedTime >= totalTime) {
-      // You can trigger additional actions here if needed when time runs out
       elapsedTime = totalTime; // Cap elapsedTime at totalTime
-      gameRef.overlays.remove('MultiplicationOverlay');
-      gameRef.overlays.add('LossOverlay'); // Show the overlay
+      gameRef.loseLife(); // Use gameRef to access loseLife method
     }
   }
 
