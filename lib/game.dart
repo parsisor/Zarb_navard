@@ -60,16 +60,16 @@ class ZarbGame extends FlameGame {
 
   void resetScore() {
     scoreDisplay
-        ?.updateScore(-100*score); // Add 100 points for each correct answer
+        ?.updateScore(-100 * score); // Add 100 points for each correct answer
   }
 
   void startObstacleSpawning() {
-    spawnObstacle();
+
     spawnObstacleWithRandomDelay();
   }
 
   void spawnObstacleWithRandomDelay() {
-    int randomDelay = 1000 + random.nextInt(2000);
+    int randomDelay = 500 + random.nextInt(3000);
     obstacleTimer = Timer(Duration(milliseconds: randomDelay), () {
       spawnObstacle();
       spawnObstacleWithRandomDelay();
@@ -89,20 +89,59 @@ class ZarbGame extends FlameGame {
   }
 
   void generateNewProblem() {
-    int num1 = random.nextInt(9) + 1;
-    int num2 = random.nextInt(9) + 1;
+  int num1, num2, additionalNum = 0;
+  String operator = '+'; // Declare the operator string for '+' or '-'
+
+  if (score * 100 < 700) {
+    // Easy difficulty: Score less than 700
+    num1 = random.nextInt(9) + 1; // Random number between 1 and 9
+    num2 = random.nextInt(5) + 1; // Random number between 1 and 5
     correctAnswer = num1 * num2;
     currentProblem = '$num1 × $num2 = ?';
+  } else if (score * 100 >= 700 && score * 100 <= 2000) {
+    // Medium difficulty: Score between 700 and 2000
+    num1 = random.nextInt(10) + 1; // Random number between 1 and 10
+    num2 = random.nextInt(10) + 1; // Random number between 1 and 10
+    correctAnswer = num1 * num2;
+    currentProblem = '$num1 × $num2 = ?';
+  } else {
+    // Hard difficulty: Score greater than 2000
+    if (random.nextBool()) {
+      // Case 1: num1 is between 1 and 10, num2 is between 1 and 10 +/- random 1 to 30
+      num1 = random.nextInt(10) + 1;
+      num2 = random.nextInt(10) + 1;
+      additionalNum = random.nextInt(30) + 1; // Random number between 1 and 30
 
-    answerOptions = [correctAnswer];
-    while (answerOptions.length < 4) {
-      int wrongAnswer = random.nextInt(100);
-      if (!answerOptions.contains(wrongAnswer)) {
-        answerOptions.add(wrongAnswer);
+      // Randomly decide whether to add or subtract
+      if (random.nextBool()) {
+        operator = '+';  // Set operator to '+'
+        correctAnswer = num1 * num2 + additionalNum;
+      } else {
+        operator = '-';  // Set operator to '-'
+        correctAnswer = num1 * num2 - additionalNum;
       }
+
+      currentProblem = '$num1 × $num2 $operator ${additionalNum.abs()} = ?';
+    } else {
+      // Case 2: num1 is between 10 and 15, num2 is between 1 and 5
+      num1 = random.nextInt(6) + 10; // Random number between 10 and 15
+      num2 = random.nextInt(5) + 1;  // Random number between 1 and 5
+      correctAnswer = num1 * num2;
+      currentProblem = '$num1 × $num2 = ?';
     }
-    answerOptions.shuffle();
   }
+
+  // Generate answer options
+  answerOptions = [correctAnswer];
+  while (answerOptions.length < 4) {
+    int wrongAnswer = random.nextInt(100); // Generate a random wrong answer
+    if (!answerOptions.contains(wrongAnswer)) {
+      answerOptions.add(wrongAnswer);
+    }
+  }
+  answerOptions.shuffle();
+}
+
 
   void pauseGame() {
     for (final obstacle in children.whereType<Obstacle>()) {
@@ -148,9 +187,7 @@ class ZarbGame extends FlameGame {
 
   void resetGameAfterIncorrectAnswer() {
     overlays.remove('MultiplicationOverlay');
-    for (final obstacle in children.whereType<Obstacle>()) {
-      obstacle.speed = 200;
-    }
+    resumeGame();
     timerBar?.removeFromParent();
     timerBar = null;
   }
@@ -163,12 +200,13 @@ class ZarbGame extends FlameGame {
   }
 
   void reset() {
+    resetScore();
+    score = 0;
     overlays.remove('LossOverlay');
     isCollisionHandled = false;
     resumeGame();
     clearObstacles();
     lives = 3; // Reset lives to 3
-    resetScore();
     livesDisplay?.updateLives(lives); // Reset the lives display
     timerBar?.removeFromParent();
     timerBar = null;
