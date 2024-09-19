@@ -27,19 +27,14 @@ class ZarbGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     super.onLoad();
+
     final player = WhiteRectangle(
       width: 60.0,
-      height: 100.0,
-      leftMargin: 60.0,
-      bottomMargin: 150.0,
+      height: 20.0,
+      leftMargin: (size.x / 2) - 30.0, // Center the player horizontally
+      bottomMargin: size.y - 800.0, // Position it 250px from the bottom
     );
     add(player);
-
-    add(Ground(
-      height: 150.0,
-      leftMargin: 0.0,
-      rightMargin: 0.0,
-    ));
 
     add(CollisionDetection(player));
 
@@ -59,12 +54,10 @@ class ZarbGame extends FlameGame {
   }
 
   void resetScore() {
-    scoreDisplay
-        ?.updateScore(-100 * score); // Add 100 points for each correct answer
+    scoreDisplay?.updateScore(-100 * score);
   }
 
   void startObstacleSpawning() {
-
     spawnObstacleWithRandomDelay();
   }
 

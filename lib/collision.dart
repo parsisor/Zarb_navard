@@ -1,5 +1,3 @@
-// collision.dart
-
 import 'package:flame/components.dart';
 import 'char.dart'; // Import the WhiteRectangle class
 import 'game.dart';
@@ -15,28 +13,26 @@ class CollisionDetection extends Component with HasGameRef<ZarbGame> {
     super.update(dt);
 
     // Check for collisions between the player and obstacles
-    for (final obstacle in gameRef.children.whereType<Obstacle>()) {
-      if (player.toRect().overlaps(obstacle.toRect()) &&
-          !gameRef.isCollisionHandled) {
-        gameRef.handleCollision(); // Use handleCollision to centralize the logic
+    bool isTouchingObstacle = false;
 
-        
-        break; // Stop checking once a collision is detected
+    for (final obstacle in gameRef.children.whereType<Obstacle>()) {
+      if (player.toRect().overlaps(obstacle.toRect())) {
+        isTouchingObstacle = true;
+
+        if (!gameRef.isCollisionHandled) {
+          gameRef.handleCollision(); // Use handleCollision to centralize the logic
+          break; // Stop checking once a collision is detected
+        }
       }
     }
-    checkObstacleLeftScreenBoundary();
-    // Check if any obstacle hits the left side of the screen
-  }
+    
+    
 
-  void checkObstacleLeftScreenBoundary() {
-    for (final obstacle in gameRef.children.whereType<Obstacle>()) {
-      if (obstacle.x <= 0) {   
-        // Set isCollisionHandled to false if any obstacle hits the left screen boundary
-        gameRef.isCollisionHandled = false;
-
-        // Optionally, remove the obstacle to prevent it from lingering at the edge
-        obstacle.removeFromParent();
-      }
+    // If no obstacle is touching the player, reset the collision handled flag
+    if (!isTouchingObstacle && gameRef.isCollisionHandled) {
+      gameRef.isCollisionHandled = false;
     }
   }
+
+  // Remove unnecessary check for the obstacle hitting the left boundary, as the game is now vertical.
 }
