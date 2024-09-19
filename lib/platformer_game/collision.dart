@@ -1,9 +1,12 @@
 // collision.dart
 
 import 'package:flame/components.dart';
-import 'char.dart'; // Import the WhiteRectangle class
+import 'package:zarb_navard_game/platformer_game/char.dart';
+import 'package:zarb_navard_game/platformer_game/obstacles.dart';
+
+
 import 'game.dart';
-import 'obstacle.dart'; // Import the Obstacle class
+
 
 class CollisionDetection extends Component with HasGameRef<ZarbGame> {
   final WhiteRectangle player; // Reference to the player (white rectangle)

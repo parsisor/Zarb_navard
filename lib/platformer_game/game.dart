@@ -3,9 +3,10 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flame/game.dart';
+import 'package:zarb_navard_game/platformer_game/obstacles.dart';
 import 'char.dart';
 import 'ground.dart';
-import 'obstacle.dart';
+
 import 'collision.dart';
 import 'timer_bar.dart';
 import 'lives_display.dart';
