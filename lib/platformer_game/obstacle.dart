@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class Obstacle extends PositionComponent with HasGameRef {
   final double width;
   final double height;
-  double speed; // Speed at which the obstacle moves towards the white rectangle
+  double speed; // Speed at which the obstacle falls towards the player
 
   Obstacle({
     this.width = 20.0,
@@ -18,23 +18,20 @@ class Obstacle extends PositionComponent with HasGameRef {
     super.onLoad();
     // Set the size of the obstacle
     size = Vector2(width, height);
-    
-    // Position the obstacle just outside the right side of the screen
-    final gameWidth = gameRef.size.x ;
-    final groundHeight = gameRef.size.y - 150.0; // Height of the ground from bottom
 
-    // Position obstacle just outside the right border of the screen
-    position = Vector2(gameWidth, groundHeight - height);
+    // Position the obstacle at the top center of the screen
+    final gameWidth = gameRef.size.x;
+    position = Vector2((gameWidth / 2) - (width / 2), -height); // Start at the top
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    // Move the obstacle towards the white rectangle
-    position.x -= speed * dt;
+    // Move the obstacle downwards towards the white rectangle
+    position.y += speed * dt;
 
-    // Remove the obstacle if it goes off the left side of the screen
-    if (position.x < -width) {
+    // Remove the obstacle if it goes off the bottom of the screen
+    if (position.y > gameRef.size.y) {
       removeFromParent();
     }
   }
