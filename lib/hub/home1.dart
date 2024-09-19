@@ -8,6 +8,8 @@ import 'package:zarb_navard_game/hub/maze/maze.dart';
 import 'package:zarb_navard_game/hub/reghabat/reghabat.dart';
 import 'package:zarb_navard_game/platformer_game/game.dart';
 
+import 'package:zarb_navard_game/platformer_game/overlay.dart'; // Import the overlay code
+
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -164,7 +166,11 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (title == 'ضرب نورد') {
           navigateToPage(
             context,
-            GameWidget(game: ZarbGame()), // Wrap ZarbGame in GameWidget
+          GameWidget(game: ZarbGame() , overlayBuilderMap: {
+          'MultiplicationOverlay': (context, game) => MultiplicationOverlay(game: game as ZarbGame),
+          'LossOverlay': (context, game) => LossOverlay(game: game as ZarbGame), // Add the LossOverlay
+        },), // Wrap ZarbGame in GameWidget
+            
             AxisDirection.right,
           ); // Navigate to Zarb Navard
         }

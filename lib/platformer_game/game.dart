@@ -3,10 +3,9 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flame/game.dart';
-import 'package:zarb_navard_game/platformer_game/obstacles.dart';
 import 'char.dart';
 import 'ground.dart';
-
+import 'obstacle.dart';
 import 'collision.dart';
 import 'timer_bar.dart';
 import 'lives_display.dart';
@@ -25,13 +24,13 @@ class ZarbGame extends FlameGame {
   LivesDisplay? livesDisplay; // Reference to the lives display
   ScoreDisplay? scoreDisplay; // Reference to the score display
 
-  @override
+   @override
   Future<void> onLoad() async {
     super.onLoad();
 
     final player = WhiteRectangle(
       width: 60.0,
-      height: 20.0,
+      height: 10.0,
       leftMargin: (size.x / 2) - 30.0, // Center the player horizontally
       bottomMargin: size.y - 800.0, // Position it 250px from the bottom
     );
