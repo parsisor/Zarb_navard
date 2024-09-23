@@ -28,6 +28,7 @@ flutter:
     - assets/splash_screen_assets/
     - assets/LeaderBoard_assets/
     - assets/LeaderBoard_assets/character3.png
+    - assets/images/
 
   fonts:
     - family: IranSansX

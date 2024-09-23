@@ -1,45 +1,46 @@
 import 'dart:math';
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
+import 'package:flame/game.dart';
 
-class Obstacle extends PositionComponent with HasGameRef {
-  final double width;
-  final double height;
-  double speed; // Speed at which the obstacle falls towards the player
+class Obstacle extends SpriteComponent with HasGameRef {
+  double speed;
+  static final List<String> obstacleAssets = [
+    'meteor_1.png',
+    'planet_D.png',
+    'planet_D_2.png',
+    'planet_D_3.png',
+    'planet_D_4.png',
+  ];
+  final Random random = Random();
 
   Obstacle({
-    this.width = 20.0,
-    this.height = 60.0,
-    this.speed = 200.0, // Adjust speed as needed
-  });
+    required this.speed,
+    required Vector2 size,
+  }) : super(size: size);
 
   @override
   Future<void> onLoad() async {
-    super.onLoad();
-    // Set the size of the obstacle
-    size = Vector2(width, height);
-
-    // Position the obstacle at the top center of the screen
-    final gameWidth = gameRef.size.x;
-    position = Vector2((gameWidth / 2) - (width / 2), -height); // Start at the top
+    // Set the starting position of the obstacle at a random X position at the top of the screen
+    position = Vector2(random.nextDouble() * (gameRef.size.x - size.x), -size.y);
+    
+    // Choose the sprite only after the obstacle is added to the game tree
+    await _chooseRandomSprite();
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    // Move the obstacle downwards towards the white rectangle
     position.y += speed * dt;
 
-    // Remove the obstacle if it goes off the bottom of the screen
+    // Remove the obstacle once it goes off the bottom of the screen
     if (position.y > gameRef.size.y) {
       removeFromParent();
     }
   }
 
-  @override
-  void render(Canvas canvas) {
-    super.render(canvas);
-    final paint = Paint()..color = Colors.red; // Set the color of the obstacle to red
-    canvas.drawRect(size.toRect(), paint);
+  // Select a random sprite from the list of obstacle assets
+  Future<void> _chooseRandomSprite() async {
+    String chosenAsset = obstacleAssets[random.nextInt(obstacleAssets.length)];
+    sprite = await gameRef.loadSprite(chosenAsset);
   }
 }

@@ -1,17 +1,53 @@
-// game.dart
-
 import 'dart:async';
 import 'dart:math';
 import 'package:flame/game.dart';
-import 'char.dart';
-import 'ground.dart';
+import 'package:flame/components.dart';
 import 'obstacle.dart';
 import 'collision.dart';
 import 'timer_bar.dart';
 import 'lives_display.dart';
 import 'score_display.dart';
 
+class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
+  SpriteComponent bg1;
+  SpriteComponent bg2;
+  double speed;
+
+  ScrollingBackground({
+    required Sprite backgroundImage,
+    required Vector2 size,
+    this.speed = 100.0,
+  })  : bg1 = SpriteComponent(sprite: backgroundImage, size: size),
+        bg2 = SpriteComponent(sprite: backgroundImage, size: size) {
+    bg2.position = Vector2(
+        0, -size.y); // Place the second background right above the first one
+  }
+
+  @override
+  Future<void> onLoad() async {
+    add(bg1);
+    add(bg2);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    bg1.position.y += speed * dt;
+    bg2.position.y += speed * dt;
+
+    if (bg1.position.y >= gameRef.size.y) {
+      bg1.position.y = bg2.position.y - bg1.size.y; // Loop the background
+    }
+
+    if (bg2.position.y >= gameRef.size.y) {
+      bg2.position.y = bg1.position.y - bg2.size.y; // Loop the background
+    }
+  }
+}
+
 class ZarbGame extends FlameGame {
+  bool shouldSpawnObstacles = true;
   Timer? obstacleTimer;
   final Random random = Random();
   String currentProblem = "";
@@ -23,124 +59,132 @@ class ZarbGame extends FlameGame {
   int score = 0;
   LivesDisplay? livesDisplay; // Reference to the lives display
   ScoreDisplay? scoreDisplay; // Reference to the score display
+  double ospeed = 150;
 
-   @override
+  @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    final player = WhiteRectangle(
-      width: 60.0,
-      height: 10.0,
-      leftMargin: (size.x / 2) - 30.0, // Center the player horizontally
-      bottomMargin: size.y - 800.0, // Position it 250px from the bottom
+    final backgroundImage = await loadSprite('background.jpg');
+    final scrollingBackground = ScrollingBackground(
+      backgroundImage: backgroundImage,
+      size: Vector2(size.x, size.y),
+      speed: 100.0,
     );
-    add(player);
+    add(scrollingBackground);
+    // Load the character image and add it after the background
+    final playerImage = await loadSprite('character.png');
+    final player = SpriteComponent(
+      sprite: playerImage,
+      size: Vector2(160.0, 160.0),
+      position:
+          Vector2((size.x / 2) - 100.0, size.y - 190.0), // Adjust to the bottom
+    );
+    add(player); // Ensure player is added after obstacles
 
     add(CollisionDetection(player));
 
-    livesDisplay = LivesDisplay(lives: lives); // Initialize lives display
-    add(livesDisplay!); // Add lives display to the game
+    livesDisplay = LivesDisplay(lives: lives);
+    add(livesDisplay!);
 
-    scoreDisplay = ScoreDisplay(); // Initialize score display
-    add(scoreDisplay!); // Add score display to the game
+    scoreDisplay = ScoreDisplay();
+    add(scoreDisplay!);
 
     startObstacleSpawning();
   }
 
-  // Update score after a correct answer
-  void incrementScore() {
-    scoreDisplay?.updateScore(100); // Add 100 points for each correct answer
-    score++;
-  }
-
-  void resetScore() {
-    scoreDisplay?.updateScore(-100 * score);
-  }
-
   void startObstacleSpawning() {
+    shouldSpawnObstacles = true;
     spawnObstacleWithRandomDelay();
   }
 
   void spawnObstacleWithRandomDelay() {
-    int randomDelay = 500 + random.nextInt(3000);
-    obstacleTimer = Timer(Duration(milliseconds: randomDelay), () {
+    if (!shouldSpawnObstacles) return; // Exit if spawning is stopped
+
+    int randomDelay = 700 + random.nextInt(3000);
+
+    Future.delayed(Duration(milliseconds: randomDelay), () {
+      if (!shouldSpawnObstacles) return; // Check flag again after delay
+
       spawnObstacle();
-      spawnObstacleWithRandomDelay();
+      spawnObstacleWithRandomDelay(); // Continue spawning
     });
   }
 
   void spawnObstacle() {
     add(Obstacle(
-      width: 30.0,
-      height: 100.0,
-      speed: 200.0,
+      speed: ospeed, // Adjust speed as needed
+      size: Vector2(60.0, 60.0), // Adjust size as needed
     ));
   }
 
   void stopObstacleSpawning() {
-    obstacleTimer?.cancel();
+    shouldSpawnObstacles = false;
+  }
+
+  @override
+  void onRemove() {
+    shouldSpawnObstacles = false;
+    super.onRemove();
   }
 
   void generateNewProblem() {
-  int num1, num2, additionalNum = 0;
-  String operator = '+'; // Declare the operator string for '+' or '-'
+    int num1, num2, additionalNum = 0;
+    String operator = '+';
 
-  if (score * 100 < 700) {
-    // Easy difficulty: Score less than 700
-    num1 = random.nextInt(9) + 1; // Random number between 1 and 9
-    num2 = random.nextInt(5) + 1; // Random number between 1 and 5
-    correctAnswer = num1 * num2;
-    currentProblem = '$num1 × $num2 = ?';
-  } else if (score * 100 >= 700 && score * 100 <= 2000) {
-    // Medium difficulty: Score between 700 and 2000
-    num1 = random.nextInt(10) + 1; // Random number between 1 and 10
-    num2 = random.nextInt(10) + 1; // Random number between 1 and 10
-    correctAnswer = num1 * num2;
-    currentProblem = '$num1 × $num2 = ?';
-  } else {
-    // Hard difficulty: Score greater than 2000
-    if (random.nextBool()) {
-      // Case 1: num1 is between 1 and 10, num2 is between 1 and 10 +/- random 1 to 30
-      num1 = random.nextInt(10) + 1;
-      num2 = random.nextInt(10) + 1;
-      additionalNum = random.nextInt(30) + 1; // Random number between 1 and 30
-
-      // Randomly decide whether to add or subtract
-      if (random.nextBool()) {
-        operator = '+';  // Set operator to '+'
-        correctAnswer = num1 * num2 + additionalNum;
-      } else {
-        operator = '-';  // Set operator to '-'
-        correctAnswer = num1 * num2 - additionalNum;
-      }
-
-      currentProblem = '$num1 × $num2 $operator ${additionalNum.abs()} = ?';
-    } else {
-      // Case 2: num1 is between 10 and 15, num2 is between 1 and 5
-      num1 = random.nextInt(6) + 10; // Random number between 10 and 15
-      num2 = random.nextInt(5) + 1;  // Random number between 1 and 5
+    if (score * 100 < 700) {
+      num1 = random.nextInt(9) + 1;
+      num2 = random.nextInt(5) + 1;
       correctAnswer = num1 * num2;
       currentProblem = '$num1 × $num2 = ?';
-    }
-  }
+    } else if (score * 100 >= 700 && score * 100 <= 2000) {
+      num1 = random.nextInt(10) + 1;
+      num2 = random.nextInt(10) + 1;
+      correctAnswer = num1 * num2;
+      currentProblem = '$num1 × $num2 = ?';
+    } else {
+      if (random.nextBool()) {
+        num1 = random.nextInt(10) + 1;
+        num2 = random.nextInt(10) + 1;
+        additionalNum = random.nextInt(30) + 1;
 
-  // Generate answer options
-  answerOptions = [correctAnswer];
-  while (answerOptions.length < 4) {
-    int wrongAnswer = random.nextInt(100); // Generate a random wrong answer
-    if (!answerOptions.contains(wrongAnswer)) {
-      answerOptions.add(wrongAnswer);
-    }
-  }
-  answerOptions.shuffle();
-}
+        if (random.nextBool()) {
+          operator = '+';
+          correctAnswer = num1 * num2 + additionalNum;
+        } else {
+          operator = '-';
+          correctAnswer = num1 * num2 - additionalNum;
+        }
 
+        currentProblem = '$num1 × $num2 $operator ${additionalNum.abs()} = ?';
+      } else {
+        num1 = random.nextInt(6) + 10;
+        num2 = random.nextInt(5) + 1;
+        correctAnswer = num1 * num2;
+        currentProblem = '$num1 × $num2 = ?';
+      }
+    }
+
+    answerOptions = [correctAnswer];
+    while (answerOptions.length < 4) {
+      int wrongAnswer = random.nextInt(100);
+      if (!answerOptions.contains(wrongAnswer)) {
+        answerOptions.add(wrongAnswer);
+      }
+    }
+    answerOptions.shuffle();
+  }
 
   void pauseGame() {
     for (final obstacle in children.whereType<Obstacle>()) {
       obstacle.speed = 0;
     }
     stopObstacleSpawning();
+  }
+
+  void incrementScore() {
+    scoreDisplay?.updateScore(100); // Add 100 points for each correct answer
+    score++;
   }
 
   void resumeGame() {
@@ -152,8 +196,9 @@ class ZarbGame extends FlameGame {
 
   void resetGameAfterCorrectAnswer() {
     overlays.remove('MultiplicationOverlay');
-    incrementScore(); // Increment score when the answer is correct
+    incrementScore();
     resumeGame();
+    ospeed = ospeed + ospeed / 200;
     timerBar?.removeFromParent();
     timerBar = null;
   }
@@ -163,18 +208,22 @@ class ZarbGame extends FlameGame {
       resetGameAfterCorrectAnswer();
       return true;
     } else {
-      loseLife(); // Lose a life when the wrong answer is chosen
+      loseLife();
       return false;
     }
   }
 
+  void resetScore() {
+    scoreDisplay?.updateScore(-100 * score);
+  }
+
   void loseLife() {
-    lives--; // Decrement lives
-    livesDisplay?.updateLives(lives); // Update the lives display
+    lives--;
+    livesDisplay?.updateLives(lives);
     if (lives <= 0) {
-      gameOver(); // Trigger game over when lives reach 0
+      gameOver();
     } else {
-      resetGameAfterIncorrectAnswer(); // Continue game after losing a life
+      resetGameAfterIncorrectAnswer();
     }
   }
 
@@ -189,7 +238,7 @@ class ZarbGame extends FlameGame {
     pauseGame();
     overlays.remove('MultiplicationOverlay');
     timerBar?.removeFromParent();
-    overlays.add('LossOverlay'); // Show the loss overlay when lives are 0
+    overlays.add('LossOverlay');
   }
 
   void reset() {
@@ -199,8 +248,8 @@ class ZarbGame extends FlameGame {
     isCollisionHandled = false;
     resumeGame();
     clearObstacles();
-    lives = 3; // Reset lives to 3
-    livesDisplay?.updateLives(lives); // Reset the lives display
+    lives = 3;
+    livesDisplay?.updateLives(lives);
     timerBar?.removeFromParent();
     timerBar = null;
   }
@@ -218,16 +267,10 @@ class ZarbGame extends FlameGame {
     overlays.add('MultiplicationOverlay');
 
     if (timerBar == null) {
-      timerBar = TimerBar(totalTime: 4);
+      timerBar = TimerBar(totalTime: 8);
       add(timerBar!);
     } else {
       timerBar!.resetTimer();
     }
-  }
-
-  @override
-  void onRemove() {
-    obstacleTimer?.cancel();
-    super.onRemove();
   }
 }

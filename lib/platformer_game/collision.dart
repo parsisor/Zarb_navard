@@ -4,7 +4,7 @@ import 'game.dart';
 import 'obstacle.dart'; // Import the Obstacle class
 
 class CollisionDetection extends Component with HasGameRef<ZarbGame> {
-  final WhiteRectangle player; // Reference to the player (white rectangle)
+  final SpriteComponent player; // Reference to the player (white rectangle)
 
   CollisionDetection(this.player);
 
