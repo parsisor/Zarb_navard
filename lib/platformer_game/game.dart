@@ -189,7 +189,7 @@ class ZarbGame extends FlameGame {
 
   void resumeGame() {
     for (final obstacle in children.whereType<Obstacle>()) {
-      obstacle.speed = 200;
+      obstacle.speed = ospeed;
     }
     startObstacleSpawning();
   }
@@ -198,7 +198,7 @@ class ZarbGame extends FlameGame {
     overlays.remove('MultiplicationOverlay');
     incrementScore();
     resumeGame();
-    ospeed = ospeed + ospeed / 200;
+    ospeed = ospeed + ospeed / 100;
     timerBar?.removeFromParent();
     timerBar = null;
   }
