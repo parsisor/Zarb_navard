@@ -1,5 +1,5 @@
 name: zarb_navard_game
-description: "A new Flutter project."
+description: "ضرب نورد"
 publish_to: 'none'
 version: 0.1.0
 
@@ -8,17 +8,31 @@ environment:
 
 dependencies:
   flame: ^1.19.0
+  hive: ^2.0.5
+  hive_flutter: ^1.1.0
+  image_picker: ^1.1.2
+  cupertino_icons: ^1.0.8
+  
+  flutter_launcher_icons: ^0.14.0
   flutter:
     sdk: flutter
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^4.0.0
   animations: ^2.0.0
-  flip_card: ^0.6.0
+  flip_card: ^0.7.0
   shared_preferences: ^2.0.6
-  adaptive_theme: ^2.2.0  # Add this
+  adaptive_theme: ^3.6.0
+  pathfinding: ^3.0.1
+  provider: ^6.0.2
+  flutter_swipe_detector: ^2.0.0
+  hive: ^2.0.5
+  hive_flutter: ^1.1.0
+  path_provider: ^2.0.9
+  build_runner: ^2.1.7
+  hive_generator: ^2.0.1
 
 flutter:
   uses-material-design: true
@@ -29,6 +43,7 @@ flutter:
     - assets/LeaderBoard_assets/
     - assets/LeaderBoard_assets/character3.png
     - assets/images/
+    - assets/logo.png
 
   fonts:
     - family: IranSansX
@@ -55,3 +70,9 @@ flutter:
           weight: 100
         - asset: assets/Fonts/IRANSansX-UltraLight.ttf
           weight: 200
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo.png"  
+  

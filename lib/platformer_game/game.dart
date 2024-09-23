@@ -20,7 +20,7 @@ class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
   })  : bg1 = SpriteComponent(sprite: backgroundImage, size: size),
         bg2 = SpriteComponent(sprite: backgroundImage, size: size) {
     bg2.position = Vector2(
-        0, -size.y); // Place the second background right above the first one
+        0, -size.y); 
   }
 
   @override
@@ -37,11 +37,11 @@ class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
     bg2.position.y += speed * dt;
 
     if (bg1.position.y >= gameRef.size.y) {
-      bg1.position.y = bg2.position.y - bg1.size.y; // Loop the background
+      bg1.position.y = bg2.position.y - bg1.size.y; 
     }
 
     if (bg2.position.y >= gameRef.size.y) {
-      bg2.position.y = bg1.position.y - bg2.size.y; // Loop the background
+      bg2.position.y = bg1.position.y - bg2.size.y; 
     }
   }
 }
@@ -55,10 +55,10 @@ class ZarbGame extends FlameGame {
   late int correctAnswer;
   bool isCollisionHandled = false;
   TimerBar? timerBar;
-  int lives = 3; // Initialize lives to 3
+  int lives = 3; 
   int score = 0;
-  LivesDisplay? livesDisplay; // Reference to the lives display
-  ScoreDisplay? scoreDisplay; // Reference to the score display
+  LivesDisplay? livesDisplay; 
+  ScoreDisplay? scoreDisplay; 
   double ospeed = 150;
 
   @override
@@ -72,15 +72,15 @@ class ZarbGame extends FlameGame {
       speed: 100.0,
     );
     add(scrollingBackground);
-    // Load the character image and add it after the background
+    
     final playerImage = await loadSprite('character.png');
     final player = SpriteComponent(
       sprite: playerImage,
       size: Vector2(160.0, 160.0),
       position:
-          Vector2((size.x / 2) - 100.0, size.y - 190.0), // Adjust to the bottom
+          Vector2((size.x / 2) - 100.0, size.y - 190.0), 
     );
-    add(player); // Ensure player is added after obstacles
+    add(player); 
 
     add(CollisionDetection(player));
 
@@ -99,22 +99,22 @@ class ZarbGame extends FlameGame {
   }
 
   void spawnObstacleWithRandomDelay() {
-    if (!shouldSpawnObstacles) return; // Exit if spawning is stopped
+    if (!shouldSpawnObstacles) return; 
 
     int randomDelay = 700 + random.nextInt(3000);
 
     Future.delayed(Duration(milliseconds: randomDelay), () {
-      if (!shouldSpawnObstacles) return; // Check flag again after delay
+      if (!shouldSpawnObstacles) return; 
 
       spawnObstacle();
-      spawnObstacleWithRandomDelay(); // Continue spawning
+      spawnObstacleWithRandomDelay(); 
     });
   }
 
   void spawnObstacle() {
     add(Obstacle(
-      speed: ospeed, // Adjust speed as needed
-      size: Vector2(60.0, 60.0), // Adjust size as needed
+      speed: ospeed, 
+      size: Vector2(60.0, 60.0), 
     ));
   }
 
@@ -183,7 +183,7 @@ class ZarbGame extends FlameGame {
   }
 
   void incrementScore() {
-    scoreDisplay?.updateScore(100); // Add 100 points for each correct answer
+    scoreDisplay?.updateScore(100); 
     score++;
   }
 

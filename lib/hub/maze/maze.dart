@@ -1,140 +1,229 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_swipe_detector/flutter_swipe_detector.dart';
+import 'package:adaptive_theme/adaptive_theme.dart'; // Import adaptive_theme package
 
+class MazeGame extends StatefulWidget {
+  final int rows, cols;
 
-class MazeGame extends StatelessWidget {
+  const MazeGame({super.key, required this.rows, required this.cols});
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Maze Game',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MazeScreen(),
-    );
+  _MazeGameState createState() => _MazeGameState();
+}
+
+class _MazeGameState extends State<MazeGame> {
+  late MazeGenerator _mazeGenerator;
+  late int _playerRow, _playerCol;
+  late int _exitRow, _exitCol;
+
+  @override
+  void initState() {
+    super.initState();
+    _mazeGenerator = MazeGenerator(rows: widget.rows, cols: widget.cols);
+    _playerRow = 0;
+    _playerCol = 0;
+    _exitRow = widget.rows - 1;
+    _exitCol = widget.cols - 1;
   }
-}
 
-class MazeScreen extends StatefulWidget {
-  @override
-  _MazeScreenState createState() => _MazeScreenState();
-}
-
-class _MazeScreenState extends State<MazeScreen> {
-  // 0 = path, 1 = wall
-  final List<List<int>> maze = [
-    [1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 1, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 0, 1],
-    [1, 0, 0, 0, 1, 0, 1],
-    [1, 1, 1, 0, 1, 0, 1],
-    [1, 0, 0, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1],
-  ];
-
-  // Player's current position
-  int playerX = 1;
-  int playerY = 1;
-
-  // Exit position
-  int exitX = 5;
-  int exitY = 5;
-
-  // Check if player reached the exit
-  bool get hasWon => playerX == exitX && playerY == exitY;
-
-  // Move player if possible
-  void movePlayer(int dx, int dy) {
-    int newX = playerX + dx;
-    int newY = playerY + dy;
-
-    // Check if the new position is a path (0)
-    if (maze[newY][newX] == 0) {
-      setState(() {
-        playerX = newX;
-        playerY = newY;
-      });
-
-      if (hasWon) {
-        showWinDialog();
+  void _movePlayer(Direction direction) {
+    setState(() {
+      Cell currentCell = _mazeGenerator.maze[_playerRow][_playerCol];
+      if (direction == Direction.up && _playerRow > 0 && !currentCell.topWall) {
+        _playerRow -= 1;
+      } else if (direction == Direction.down && _playerRow < widget.rows - 1 && !currentCell.bottomWall) {
+        _playerRow += 1;
+      } else if (direction == Direction.left && _playerCol > 0 && !currentCell.leftWall) {
+        _playerCol -= 1;
+      } else if (direction == Direction.right && _playerCol < widget.cols - 1 && !currentCell.rightWall) {
+        _playerCol += 1;
       }
+      _checkForWin();
+    });
+  }
+
+  void _checkForWin() {
+    if (_playerRow == _exitRow && _playerCol == _exitCol) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Congratulations!'),
+            content: const Text('You have solved the maze!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => MazeGame(rows: widget.rows + 5, cols: widget.cols + 5)),
+                  );
+                },
+                child: const Text('Next Level'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
-  // Show a dialog when the player wins
-  void showWinDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Congratulations!"),
-        content: Text("You reached the exit!"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    double cellSize = MediaQuery.of(context).size.width / widget.cols;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Maze Game"),
+        title: const Text('Maze Game'),
         centerTitle: true,
       ),
-      body: GestureDetector(
-        onVerticalDragUpdate: (details) {
-          if (details.delta.dy < -10) {
-            movePlayer(0, -1); // Move up
-          } else if (details.delta.dy > 10) {
-            movePlayer(0, 1); // Move down
-          }
-        },
-        onHorizontalDragUpdate: (details) {
-          if (details.delta.dx < -10) {
-            movePlayer(-1, 0); // Move left
-          } else if (details.delta.dx > 10) {
-            movePlayer(1, 0); // Move right
-          }
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (int y = 0; y < maze.length; y++)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (int x = 0; x < maze[y].length; x++)
-                    buildMazeCell(x, y),
-                ],
-              ),
-          ],
+      body: SwipeDetector(
+        onSwipeUp: (Offset offset) => _movePlayer(Direction.up),
+        onSwipeDown: (Offset offset) => _movePlayer(Direction.down),
+        onSwipeLeft: (Offset offset) => _movePlayer(Direction.left),
+        onSwipeRight: (Offset offset) => _movePlayer(Direction.right),
+        child: Center(
+          child: Stack(
+            children: [
+              _buildMazeGrid(cellSize),
+              _buildPlayer(cellSize),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Build each cell of the maze
-  Widget buildMazeCell(int x, int y) {
-    Color color;
-
-    if (x == playerX && y == playerY) {
-      color = Colors.blue; // Player position
-    } else if (x == exitX && y == exitY) {
-      color = Colors.green; // Exit position
-    } else {
-      color = maze[y][x] == 1 ? Colors.black : Colors.white; // Wall or Path
-    }
-
-    return Container(
-      width: 50,
-      height: 50,
-      margin: EdgeInsets.all(2),
-      color: color,
+  Widget _buildMazeGrid(double cellSize) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: _mazeGenerator.maze.map((row) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: row.map((cell) {
+            return CustomPaint(
+              size: Size(cellSize, cellSize),
+              painter: CellPainter(cell),
+            );
+          }).toList(),
+        );
+      }).toList(),
     );
+  }
+
+  Widget _buildPlayer(double cellSize) {
+    return Positioned(
+      left: (_playerCol * cellSize) + (cellSize * 0.1), // Center the player horizontally
+      top: (_playerRow * cellSize) + (cellSize * 0.1) +163,  // Center the player vertically
+      child: Container(
+        width: cellSize * 0.8, // Player size
+        height: cellSize * 0.8,
+        decoration: BoxDecoration(
+          color: Colors.blue,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+}
+
+enum Direction { up, down, left, right }
+
+class MazeGenerator {
+  final int rows;
+  final int cols;
+  late List<List<Cell>> maze;
+
+  MazeGenerator({required this.rows, required this.cols}) {
+    maze = List.generate(rows, (r) => List.generate(cols, (c) => Cell(r, c)));
+    _generateMaze();
+  }
+
+  void _generateMaze() {
+    Cell start = maze[0][0];
+    _carvePassages(start);
+  }
+
+  void _carvePassages(Cell current) {
+    current.visited = true;
+    List<Cell> neighbors = current.getUnvisitedNeighbors(maze);
+
+    while (neighbors.isNotEmpty) {
+      Cell next = neighbors[Random().nextInt(neighbors.length)];
+      current.removeWall(next);
+      next.visited = true;
+      _carvePassages(next);
+      neighbors = current.getUnvisitedNeighbors(maze);
+    }
+  }
+
+  List<List<Cell>> getMaze() => maze;
+}
+
+class Cell {
+  int row, col;
+  bool visited = false;
+  bool topWall = true, rightWall = true, bottomWall = true, leftWall = true;
+
+  Cell(this.row, this.col);
+
+  List<Cell> getUnvisitedNeighbors(List<List<Cell>> maze) {
+    List<Cell> neighbors = [];
+    if (row > 0 && !maze[row - 1][col].visited) neighbors.add(maze[row - 1][col]);
+    if (row < maze.length - 1 && !maze[row + 1][col].visited) neighbors.add(maze[row + 1][col]);
+    if (col > 0 && !maze[row][col - 1].visited) neighbors.add(maze[row][col - 1]);
+    if (col < maze[0].length - 1 && !maze[row][col + 1].visited) neighbors.add(maze[row][col + 1]);
+    return neighbors;
+  }
+
+  void removeWall(Cell neighbor) {
+    if (row == neighbor.row) {
+      if (col < neighbor.col) {
+        rightWall = false;
+        neighbor.leftWall = false;
+      } else {
+        leftWall = false;
+        neighbor.rightWall = false;
+      }
+    } else if (col == neighbor.col) {
+      if (row < neighbor.row) {
+        bottomWall = false;
+        neighbor.topWall = false;
+      } else {
+        topWall = false;
+        neighbor.bottomWall = false;
+      }
+    }
+  }
+}
+
+class CellPainter extends CustomPainter {
+  final Cell cell;
+
+  CellPainter(this.cell);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 2.0;
+
+    if (cell.topWall) {
+      canvas.drawLine(const Offset(0, 0), Offset(size.width, 0), paint);
+    }
+    if (cell.rightWall) {
+      canvas.drawLine(Offset(size.width, 0), Offset(size.width, size.height), paint);
+    }
+    if (cell.bottomWall) {
+      canvas.drawLine(Offset(size.width, size.height), Offset(0, size.height), paint);
+    }
+    if (cell.leftWall) {
+      canvas.drawLine(Offset(0, size.height), const Offset(0, 0), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
   }
 }

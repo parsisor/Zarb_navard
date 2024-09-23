@@ -1,6 +1,6 @@
-// overlay.dart
+
 import 'package:flutter/material.dart';
-import 'game.dart'; // Import ZarbGame
+import 'game.dart'; 
 
 class MultiplicationOverlay extends StatelessWidget {
   final ZarbGame game;
@@ -43,10 +43,10 @@ class MultiplicationOverlay extends StatelessWidget {
           children: game.answerOptions.map((answer) {
             return GestureDetector(
                 onTap: () {
-                  // Handle answer selection
+                  
                   if (game.checkAnswer(answer)) {
-                    game.overlays.remove('MultiplicationOverlay'); // Hide the overlay if correct
-                    game.generateNewProblem(); // Generate a new problem after a correct answer
+                    game.overlays.remove('MultiplicationOverlay'); 
+                    game.generateNewProblem(); 
                   } 
                 },
                 child: CircleAvatar(
@@ -88,8 +88,8 @@ class LossOverlay extends StatelessWidget {
           const SizedBox(height: 20.0),
           ElevatedButton(
             onPressed: () {
-              game.reset(); // Reset the game state
-              game.overlays.remove('LossOverlay'); // Hide the loss overlay
+              game.reset(); 
+              game.overlays.remove('LossOverlay'); 
             },
             child: const Text('دوباره بازی کن'),
           ),

@@ -1,8 +1,5 @@
-
-
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 class MathRaceScreen extends StatefulWidget {
@@ -20,11 +17,13 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
   int player1Answer = 0;
   int player2Answer = 0;
 
+  List<int> player1Answers = [];
+  List<int> player2Answers = [];
+
   final Random random = Random();
 
-  // Timer for game countdown
   Timer? _timer;
-  int _timeLeft = 30; // Game duration in seconds
+  int _timeLeft = 30;
 
   @override
   void initState() {
@@ -39,7 +38,6 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
     super.dispose();
   }
 
-  // Start the game timer
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
@@ -53,36 +51,34 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
     });
   }
 
-  // Show game over dialog
   void _showGameOverDialog() {
     String winner;
     if (player1Score > player2Score) {
-      winner = 'Player 1 Wins!';
+      winner = 'بازیکن ۱ برنده شد!';
     } else if (player2Score > player1Score) {
-      winner = 'Player 2 Wins!';
+      winner = 'بازیکن ۲ برنده شد!';
     } else {
-      winner = 'It\'s a Tie!';
+      winner = 'مساوی!';
     }
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Game Over"),
-        content: Text("$winner\nPlayer 1: $player1Score\nPlayer 2: $player2Score"),
+        title: Text("پایان بازی"),
+        content: Text("$winner\nامتیاز بازیکن ۱: $player1Score\nامتیاز بازیکن ۲: $player2Score"),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               _restartGame();
             },
-            child: Text("Play Again"),
+            child: Text("دوباره بازی کن"),
           ),
         ],
       ),
     );
   }
 
-  // Restart the game
   void _restartGame() {
     setState(() {
       player1Score = 0;
@@ -93,115 +89,183 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
     });
   }
 
-  // Generate random math questions for both players
   void _generateQuestions() {
     int num1 = random.nextInt(10) + 1;
     int num2 = random.nextInt(10) + 1;
-    player1Question = '$num1 + $num2';
-    player1Answer = num1 + num2;
+    player1Question = '$num1 × $num2';
+    player1Answer = num1 * num2;
+    player1Answers = _getShuffledAnswers(player1Answer);
 
     num1 = random.nextInt(10) + 1;
     num2 = random.nextInt(10) + 1;
-    player2Question = '$num1 + $num2';
-    player2Answer = num1 + num2;
+    player2Question = '$num1 × $num2';
+    player2Answer = num1 * num2;
+    player2Answers = _getShuffledAnswers(player2Answer);
   }
 
-  // Check Player 1's answer
   void _checkPlayer1Answer(int answer) {
     if (answer == player1Answer) {
       setState(() {
         player1Score++;
-        _generateQuestions(); // Generate new questions after correct answer
+      });
+    } else {
+      setState(() {
+        player2Score++;
       });
     }
+
+    Future.delayed(Duration(seconds: 1), () {
+      setState(() {
+        _generateQuestions();
+      });
+    });
   }
 
-  // Check Player 2's answer
   void _checkPlayer2Answer(int answer) {
     if (answer == player2Answer) {
       setState(() {
         player2Score++;
-        _generateQuestions(); // Generate new questions after correct answer
+      });
+    } else {
+      setState(() {
+        player1Score++;
       });
     }
+
+    Future.delayed(Duration(seconds: 1), () {
+      setState(() {
+        _generateQuestions();
+      });
+    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Math Race Game"),
-        centerTitle: true,
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  "Player 1",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+  List<int> _getShuffledAnswers(int correctAnswer) {
+    Set<int> answers = {correctAnswer};
+
+    while (answers.length < 3) {
+      int randomAnswer = random.nextInt(90) + 1;
+      answers.add(randomAnswer);
+    }
+
+    List<int> answerList = answers.toList();
+    answerList.shuffle();
+    return answerList;
+  }
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.rotationX(pi),
+                  child: Column(
+                    children: [
+                      _buildPlayerSection(
+                        playerName: "بازیکن ۱",
+                        question: player1Question,
+                        score: player1Score,
+                        answers: player1Answers,
+                        isPlayer1: true,
+                      ),
+                    ],
+                  ),
                 ),
-                Text(
-                  player1Question,
-                  style: TextStyle(fontSize: 32),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              ),
+              // Add a SizedBox for spacing
+              SizedBox(height: 30), // Adjust the height as needed
+              Expanded(
+                child: Column(
                   children: [
-                    for (int i = player1Answer - 1; i <= player1Answer + 1; i++)
-                      _buildPlayerButton(i, isPlayer1: true),
+                    _buildPlayerSection(
+                      playerName: "بازیکن ۲",
+                      question: player2Question,
+                      score: player2Score,
+                      answers: player2Answers,
+                      isPlayer1: false,
+                    ),
                   ],
                 ),
-                Text(
-                  "Score: $player1Score",
-                  style: TextStyle(fontSize: 24),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "زمان باقی‌مانده: $_timeLeft",
+                  style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          left: 10,
+          top: MediaQuery.of(context).size.height / 2 - 20,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.purple,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
           ),
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  "Player 2",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  player2Question,
-                  style: TextStyle(fontSize: 32),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (int i = player2Answer - 1; i <= player2Answer + 1; i++)
-                      _buildPlayerButton(i, isPlayer1: false),
-                  ],
-                ),
-                Text(
-                  "Score: $player2Score",
-                  style: TextStyle(fontSize: 24),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "Time Left: $_timeLeft",
-              style: TextStyle(fontSize: 24, color: Colors.red),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
+    ),
+  );
+}
+
+
+  Widget _buildPlayerSection({
+    required String playerName,
+    required String question,
+    required int score,
+    required List<int> answers,
+    required bool isPlayer1,
+  }) {
+    return Column(
+      children: [
+        Text(
+          playerName,
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.purple),
+        ),
+        SizedBox(height: 10),
+        Text(
+          question,
+          style: TextStyle(fontSize: 32, color: Colors.orangeAccent),
+        ),
+        SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: answers
+              .map((answer) => _buildAnswerButton(answer, isPlayer1: isPlayer1))
+              .toList(),
+        ),
+        SizedBox(height: 10),
+        Text(
+          "امتیاز: $score",
+          style: TextStyle(fontSize: 24, color: Colors.green),
+        ),
+      ],
     );
   }
 
-  // Build answer buttons for each player
-  Widget _buildPlayerButton(int value, {required bool isPlayer1}) {
+  Widget _buildAnswerButton(int value, {required bool isPlayer1}) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: ElevatedButton(
         onPressed: () {
           if (isPlayer1) {
@@ -210,13 +274,16 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
             _checkPlayer2Answer(value);
           }
         },
-        child: Text(
-          value.toString(),
-          style: TextStyle(fontSize: 24),
-        ),
         style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          textStyle: TextStyle(fontSize: 22),
+          backgroundColor: Colors.lightBlueAccent,
+          foregroundColor: Colors.white,
         ),
+        child: Text(value.toString()),
       ),
     );
   }

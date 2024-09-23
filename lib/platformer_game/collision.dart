@@ -12,7 +12,7 @@ class CollisionDetection extends Component with HasGameRef<ZarbGame> {
   void update(double dt) {
     super.update(dt);
 
-    // Check for collisions between the player and obstacles
+    
     bool isTouchingObstacle = false;
 
     for (final obstacle in gameRef.children.whereType<Obstacle>()) {
@@ -20,17 +20,17 @@ class CollisionDetection extends Component with HasGameRef<ZarbGame> {
         isTouchingObstacle = true;
 
         if (!gameRef.isCollisionHandled) {
-          gameRef.handleCollision(); // Use handleCollision to centralize the logic
-          break; // Stop checking once a collision is detected
+          gameRef.handleCollision(); 
+          break; 
         }
       }
     }
 
-    // If no obstacle is touching the player, reset the collision handled flag
+    
     if (!isTouchingObstacle && gameRef.isCollisionHandled) {
       gameRef.isCollisionHandled = false;
     }
   }
 
-  // Remove unnecessary check for the obstacle hitting the left boundary, as the game is now vertical.
+  
 }

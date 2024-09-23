@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SettingsPage extends StatefulWidget {
   final bool darkModeEnabled;
@@ -11,27 +14,65 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  String username = 'مهرانه اسلامی';
+  late Box userBox;
+  String username = 'نام کاربری خود را وارد کنید';
   String phoneNumber = '';
   bool notificationsEnabled = true;
+  String password = '';
+  String? profilePicturePath;
+  String? phoneError;
+
+  @override
+  void initState() {
+    super.initState();
+    userBox = Hive.box('userBox');
+    _loadUserData();
+  }
+
+  void _loadUserData() {
+    setState(() {
+      username = userBox.get('username', defaultValue: username);
+      phoneNumber = userBox.get('phoneNumber', defaultValue: phoneNumber);
+      password = userBox.get('password', defaultValue: password);
+      notificationsEnabled = userBox.get('notificationsEnabled', defaultValue: true);
+      profilePicturePath = userBox.get('profilePicture', defaultValue: null);
+    });
+  }
+
+  Future<void> _pickProfilePicture() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile != null) {
+      setState(() {
+        profilePicturePath = pickedFile.path;
+        userBox.put('profilePicture', profilePicturePath);
+      });
+    }
+  }
+
+  bool _validatePhoneNumber(String phone) {
+    // Simple validation: Check if the number contains only digits and is of a specific length
+    return RegExp(r'^\d{10,15}$').hasMatch(phone); // Adjust length as necessary
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background, // Use theme background color
+      backgroundColor: theme.colorScheme.surface,
       body: Stack(
         children: [
           // Header
           Container(
             width: double.infinity,
-            color: theme.colorScheme.primary, // Use theme primary color
+            color: theme.colorScheme.primary,
             child: Center(
               child: Text(
                 'تنظیمات',
                 style: TextStyle(
-                  color: theme.colorScheme.onPrimary, // Use theme onPrimary color
+                  color: theme.colorScheme.onPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'IranSans',
@@ -41,7 +82,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           // Settings content
           Positioned(
-            top: MediaQuery.of(context).size.height / 4, // Setting position for the container
+            top: MediaQuery.of(context).size.height / 4,
             left: 16,
             right: 16,
             bottom: 0,
@@ -49,35 +90,35 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface, // Use theme surface color
-                  borderRadius: BorderRadius.circular(20), // Rounded corners
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: theme.shadowColor.withOpacity(0.1), // Use theme shadow color
+                      color: theme.shadowColor.withOpacity(0.1),
                       spreadRadius: 5,
                       blurRadius: 10,
                     ),
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0), // Adding padding around the content
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end, // Right-aligning text
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       // User profile section
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end, // Right-aligning the profile picture and name
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                username, // Display current username
+                                username,
                                 style: TextStyle(
                                   fontFamily: 'IranSans',
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: theme.textTheme.titleLarge!.color, // Use theme text color
+                                  color: theme.textTheme.titleLarge!.color,
                                 ),
                               ),
                               Text(
@@ -85,19 +126,38 @@ class _SettingsPageState extends State<SettingsPage> {
                                 style: TextStyle(
                                   fontFamily: 'IranSans',
                                   fontSize: 14,
-                                  color: theme.textTheme.titleMedium!.color, // Use theme subtitle color
+                                  color: theme.textTheme.titleMedium!.color,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(width: 16),
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundImage: AssetImage('assets/LeaderBoard_assets/character1.png'), // Profile picture
+                          const SizedBox(width: 16),
+                          GestureDetector(
+                            onTap: _pickProfilePicture,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage: profilePicturePath != null
+                                      ? FileImage(File(profilePicturePath!))
+                                      : const AssetImage('assets/LeaderBoard_assets/character1.png') as ImageProvider,
+                                ),
+                                const Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Icon(
+                                    Icons.edit,
+                                    color: Colors.blueAccent,
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
                       // Account settings
                       buildListTile(
@@ -116,40 +176,70 @@ class _SettingsPageState extends State<SettingsPage> {
                           _showChangePasswordDialog(context);
                         },
                       ),
-                      buildListTile(
-                        context,
-                        'اضافه کردن شماره تلفن',
-                        Icons.add,
-                        () {
-                          _showAddPhoneNumberDialog(context);
-                        },
+                      // Updated section for phone number
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (phoneNumber.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Text(
+                                'شماره تلفن: $phoneNumber',
+                                style: TextStyle(
+                                  fontFamily: 'IranSans',
+                                  fontSize: 16,
+                                  color: theme.textTheme.bodyLarge!.color,
+                                ),
+                              ),
+                            ),
+                          if (phoneError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Text(
+                                phoneError!,
+                                style: TextStyle(
+                                  fontFamily: 'IranSans',
+                                  fontSize: 14,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          buildListTile(
+                            context,
+                            phoneNumber.isEmpty ? 'اضافه کردن شماره تلفن' : 'تغییر شماره',
+                            phoneNumber.isEmpty ? Icons.add : Icons.edit,
+                            () {
+                              _showAddPhoneNumberDialog(context);
+                            },
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
                       // Notification switch
                       buildSwitchTile(
                         context,
                         'اعلان‌ها',
-                        notificationsEnabled, // Initially enabled
+                        notificationsEnabled,
                         (value) {
                           setState(() {
                             notificationsEnabled = value;
+                            userBox.put('notificationsEnabled', value);
                           });
                         },
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
                       // Theme change button
                       buildListTile(
                         context,
-                        'تم را عوض کن', // "Change Theme"
-                        Icons.color_lens, // Icon for theme change
+                        'تم را عوض کن',
+                        Icons.color_lens,
                         () {
-                          // Toggle the theme when tapped
                           widget.onThemeToggle(!widget.darkModeEnabled);
                         },
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
                       // About and terms section
                       buildListTile(
@@ -157,7 +247,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         'درباره ما',
                         Icons.arrow_back_ios,
                         () {
-                          // Action for about us
+                          _showInfoDialog(context, 'درباره ما', 'این برنامه توسط تیم ما ساخته شده است.');
                         },
                       ),
                       buildListTile(
@@ -165,7 +255,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         'قوانین و شروط',
                         Icons.arrow_back_ios,
                         () {
-                          // Action for terms and conditions
+                          _showInfoDialog(context, 'قوانین و شروط', 'شروط استفاده از برنامه...');
                         },
                       ),
                     ],
@@ -179,29 +269,25 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Function to build list tile
   Widget buildListTile(BuildContext context, String title, IconData icon, VoidCallback onTap) {
     final theme = Theme.of(context);
-
     return ListTile(
-      trailing: Icon(icon, color: theme.iconTheme.color), // Use theme icon color
+      trailing: Icon(icon, color: theme.iconTheme.color),
       title: Text(
         title,
         textAlign: TextAlign.right,
         style: TextStyle(
           fontFamily: 'IranSans',
           fontSize: 16,
-          color: theme.textTheme.bodyLarge!.color, // Use theme body text color
+          color: theme.textTheme.bodyLarge!.color,
         ),
       ),
-      onTap: onTap, // Assign the action passed to the tile
+      onTap: onTap,
     );
   }
 
-  // Function to build switch tile
   Widget buildSwitchTile(BuildContext context, String title, bool initialValue, Function(bool) onChanged) {
     final theme = Theme.of(context);
-
     return SwitchListTile(
       title: Text(
         title,
@@ -209,39 +295,41 @@ class _SettingsPageState extends State<SettingsPage> {
         style: TextStyle(
           fontFamily: 'IranSans',
           fontSize: 16,
-          color: theme.textTheme.bodyLarge!.color, // Use theme body text color
+          color: theme.textTheme.bodyLarge!.color,
         ),
       ),
       value: initialValue,
-      onChanged: onChanged, // Assign the action passed to the switch
-      activeColor: theme.colorScheme.primary, // Use theme primary color for switch
+      onChanged: onChanged,
+      activeColor: theme.colorScheme.primary,
     );
   }
 
-  // Dialog for changing username
   void _showChangeUsernameDialog(BuildContext context) {
     TextEditingController _usernameController = TextEditingController();
+    _usernameController.text = username;
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('تغییر نام کاربری'),
+          title: const Text('تغییر نام کاربری'),
           content: TextField(
             controller: _usernameController,
-            decoration: InputDecoration(hintText: "نام کاربری جدید"),
+            decoration: const InputDecoration(hintText: "نام کاربری جدید"),
           ),
           actions: [
             TextButton(
-              child: Text('لغو'),
+              child: const Text('لغو'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('تأیید'),
+              child: const Text('تأیید'),
               onPressed: () {
                 setState(() {
                   username = _usernameController.text;
+                  userBox.put('username', username);
                 });
                 Navigator.of(context).pop();
               },
@@ -252,30 +340,32 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Dialog for changing password
   void _showChangePasswordDialog(BuildContext context) {
     TextEditingController _passwordController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('تغییر رمز عبور'),
+          title: const Text('تغییر رمز عبور'),
           content: TextField(
             controller: _passwordController,
             obscureText: true,
-            decoration: InputDecoration(hintText: "رمز عبور جدید"),
+            decoration: const InputDecoration(hintText: "رمز عبور جدید"),
           ),
           actions: [
             TextButton(
-              child: Text('لغو'),
+              child: const Text('لغو'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('تأیید'),
+              child: const Text('تأیید'),
               onPressed: () {
-                // Handle password change logic here
+                setState(() {
+                  password = _passwordController.text;
+                  userBox.put('password', password);
+                });
                 Navigator.of(context).pop();
               },
             ),
@@ -285,32 +375,73 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Dialog for adding phone number
   void _showAddPhoneNumberDialog(BuildContext context) {
     TextEditingController _phoneController = TextEditingController();
+    _phoneController.text = phoneNumber;
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('اضافه کردن شماره تلفن'),
-          content: TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(hintText: "شماره تلفن"),
+          title: const Text('اضافه کردن شماره تلفن'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(hintText: "شماره تلفن"),
+              ),
+              if (phoneError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    phoneError!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+            ],
           ),
           actions: [
             TextButton(
-              child: Text('لغو'),
+              child: const Text('لغو'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('تأیید'),
+              child: const Text('تأیید'),
               onPressed: () {
                 setState(() {
-                  phoneNumber = _phoneController.text;
+                  String newPhoneNumber = _phoneController.text;
+                  if (_validatePhoneNumber(newPhoneNumber)) {
+                    phoneNumber = newPhoneNumber;
+                    userBox.put('phoneNumber', phoneNumber);
+                    phoneError = null; // Clear error if valid
+                  } else {
+                    phoneError = 'لطفا شماره تلفن معتبر وارد کنید';
+                  }
                 });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showInfoDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              child: const Text('بستن'),
+              onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
