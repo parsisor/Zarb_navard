@@ -78,7 +78,7 @@ class ZarbGame extends FlameGame {
       sprite: playerImage,
       size: Vector2(160.0, 160.0),
       position:
-          Vector2((size.x / 2) - 100.0, size.y - 190.0), 
+          Vector2((size.x / 2) - 100.0, size.y / 2 ), 
     );
     add(player); 
 
