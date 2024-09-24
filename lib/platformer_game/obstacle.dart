@@ -20,10 +20,9 @@ class Obstacle extends SpriteComponent with HasGameRef {
 
   @override
   Future<void> onLoad() async {
-    
-    position = Vector2(random.nextDouble() * (gameRef.size.x - size.x), -size.y);
-    
-    
+    position =
+        Vector2(random.nextDouble() * (gameRef.size.x - size.x), -size.y / 2);
+
     await _chooseRandomSprite();
   }
 
@@ -32,13 +31,11 @@ class Obstacle extends SpriteComponent with HasGameRef {
     super.update(dt);
     position.y += speed * dt;
 
-    
     if (position.y > gameRef.size.y) {
       removeFromParent();
     }
   }
 
-  
   Future<void> _chooseRandomSprite() async {
     String chosenAsset = obstacleAssets[random.nextInt(obstacleAssets.length)];
     sprite = await gameRef.loadSprite(chosenAsset);

@@ -50,7 +50,13 @@ flutter:
     - assets/splash_screen_assets/
     - assets/LeaderBoard_assets/
     - assets/LeaderBoard_assets/character3.png
-    - assets/images/
+    - assets/images/background.jpg
+    - assets/images/character.png
+    - assets/images/meteor_1.png
+    - assets/images/planet_D.png
+    - assets/images/planet_D_2.png
+    - assets/images/planet_D_3.png
+    - assets/images/planet_D_4.png
     - assets/logo.png
 
   fonts:
