@@ -57,8 +57,8 @@ List<List<int>> addNumber(List<List<int>> grid,List<List<int>> gridNew){
       }
     }
   }
-  if (options.isNotEmpty) {
-    int spotRandomIndex = Random().nextInt(options.length);
+  if (options.length > 0) {
+    int spotRandomIndex = new Random().nextInt(options.length);
     Point spot = options[spotRandomIndex];
     int r = new Random().nextInt(100);
     grid[spot.x][spot.y] = r > 50 ? 4 : 2;
