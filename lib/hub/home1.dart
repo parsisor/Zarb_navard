@@ -8,7 +8,8 @@ import 'package:zarb_navard_game/hub/maze/maze.dart';
 import 'package:zarb_navard_game/hub/reghabat/reghabat.dart';
 import 'package:zarb_navard_game/platformer_game/game.dart';
 import 'package:zarb_navard_game/platformer_game/overlay.dart';
-import 'package:zarb_navard_game/puzzels/home.dart'; 
+import 'package:zarb_navard_game/puzzels/game.dart';
+ 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -204,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         // Navigate to your puzzle game screen
-        navigateToPage(context, bistchehelohasht(), AxisDirection.right); 
+        navigateToPage(context, bistchehlohasht() as Widget, AxisDirection.right); 
       },
       child: buildCardFront(title, iconPath, isTablet, false), // Change to true for featured if needed
     );

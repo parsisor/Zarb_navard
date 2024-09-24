@@ -33,6 +33,14 @@ dev_dependencies:
   path_provider: ^2.0.9
   build_runner: ^2.1.7
   hive_generator: ^2.0.1
+  flutter_riverpod: ^1.0.4
+  flame_audio: ^1.2.0
+
+
+  uuid: ^3.0.6
+
+
+  json_annotation: ^4.5.0
 
 flutter:
   uses-material-design: true

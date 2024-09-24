@@ -1,18 +1,33 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
-import 'package:zarb_navard_game/hub/home1.dart';
+import 'package:zarb_navard_game/puzzels/models/board_adapter.dart';
 
+import 'hub/home1.dart'; // Your home screen.
 
 void main() async {
+  // Ensuring that Flutter bindings and Hive are initialized before the app runs.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock the orientation to portrait mode for Android & iOS.
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // Initialize Hive and open a box for user data.
   await Hive.initFlutter();
-  await Hive.openBox('userBox'); // Open a box for user data
-  runApp(MyApp());
+  await Hive.openBox('userBox');
+  Hive.registerAdapter(BoardAdapter()); // Assuming this adapter is for the 2048 game.
+
+  // Run the app with ProviderScope for Riverpod state management and AdaptiveTheme for light/dark mode.
+  runApp(const ProviderScope(
+    child: MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return AdaptiveTheme(
@@ -55,8 +70,9 @@ class MyApp extends StatelessWidget {
         theme: theme,
         darkTheme: darkTheme,
         debugShowCheckedModeBanner: false,
-        home: HomeScreen(), // Your HomeScreen widget
+        home: HomeScreen(), // Default home screen.
       ),
     );
   }
 }
+
