@@ -28,20 +28,23 @@ class _MazeGameState extends State<MazeGame> {
   }
 
   void _movePlayer(Direction direction) {
-    setState(() {
-      Cell currentCell = _mazeGenerator.maze[_playerRow][_playerCol];
-      if (direction == Direction.up && _playerRow > 0 && !currentCell.topWall) {
-        _playerRow -= 1;
-      } else if (direction == Direction.down && _playerRow < widget.rows - 1 && !currentCell.bottomWall) {
-        _playerRow += 1;
-      } else if (direction == Direction.left && _playerCol > 0 && !currentCell.leftWall) {
-        _playerCol -= 1;
-      } else if (direction == Direction.right && _playerCol < widget.cols - 1 && !currentCell.rightWall) {
-        _playerCol += 1;
-      }
-      _checkForWin();
-    });
-  }
+  setState(() {
+    Cell currentCell = _mazeGenerator.maze[_playerRow][_playerCol];
+
+    if (direction == Direction.up && _playerRow > 0 && !currentCell.topWall) {
+      _playerRow -= 1;
+    } else if (direction == Direction.down && _playerRow < widget.rows - 1 && !currentCell.bottomWall) {
+      _playerRow += 1;
+    } else if (direction == Direction.left && _playerCol > 0 && !currentCell.leftWall) {
+      _playerCol -= 1;
+    } else if (direction == Direction.right && _playerCol < widget.cols - 1 && !currentCell.rightWall) {
+      _playerCol += 1;
+    }
+    // Check for a win after each move
+    _checkForWin();
+  });
+}
+
 
   void _checkForWin() {
     if (_playerRow == _exitRow && _playerCol == _exitCol) {
@@ -49,8 +52,8 @@ class _MazeGameState extends State<MazeGame> {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: const Text('Congratulations!'),
-            content: const Text('You have solved the maze!'),
+            title: const Text('!!تبریک!!'),
+            content: const Text('!شما از هزارتو خارج شدید'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -59,7 +62,7 @@ class _MazeGameState extends State<MazeGame> {
                     MaterialPageRoute(builder: (_) => MazeGame(rows: widget.rows + 5, cols: widget.cols + 5)),
                   );
                 },
-                child: const Text('Next Level'),
+                child: const Text('مرحله بعد'),
               ),
             ],
           );
@@ -69,30 +72,64 @@ class _MazeGameState extends State<MazeGame> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    double cellSize = MediaQuery.of(context).size.width / widget.cols;
+Widget build(BuildContext context) {
+  double mazeAspectRatio = widget.cols / widget.rows;
+  double screenWidth = MediaQuery.of(context).size.width;
+  double screenHeight = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Maze Game'),
-        centerTitle: true,
-      ),
-      body: SwipeDetector(
-        onSwipeUp: (Offset offset) => _movePlayer(Direction.up),
-        onSwipeDown: (Offset offset) => _movePlayer(Direction.down),
-        onSwipeLeft: (Offset offset) => _movePlayer(Direction.left),
-        onSwipeRight: (Offset offset) => _movePlayer(Direction.right),
-        child: Center(
-          child: Stack(
-            children: [
-              _buildMazeGrid(cellSize),
-              _buildPlayer(cellSize),
-            ],
+  double cellSize = min(
+    screenWidth / widget.cols,
+    (screenHeight - kToolbarHeight) / widget.rows
+  );
+
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('بازی ماز'),
+      centerTitle: true,
+    ),
+    body: SwipeDetector(
+      onSwipeUp: (Offset offset) => _movePlayer(Direction.up),
+      onSwipeDown: (Offset offset) => _movePlayer(Direction.down),
+      onSwipeLeft: (Offset offset) => _movePlayer(Direction.left),
+      onSwipeRight: (Offset offset) => _movePlayer(Direction.right),
+      child: Center(
+        child: AspectRatio(
+          aspectRatio: mazeAspectRatio,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox(
+              width: widget.cols * cellSize,
+              height: widget.rows * cellSize,
+              child: Stack(
+                children: [
+                  _buildMazeGrid(cellSize),
+                  _buildPlayer(cellSize),
+                  _buildExit(cellSize),  // Add the exit here
+                ],
+              ),
+            ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+Widget _buildExit(double cellSize) {
+  return Positioned(
+    left: _exitCol * cellSize,
+    top: _exitRow * cellSize,
+    child: Container(
+      width: cellSize * 0.8,
+      height: cellSize * 0.8,
+      decoration: BoxDecoration(
+        color: Colors.green,  // Make the exit stand out
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+  );
+}
+
 
   Widget _buildMazeGrid(double cellSize) {
     return Column(
@@ -111,20 +148,21 @@ class _MazeGameState extends State<MazeGame> {
     );
   }
 
-  Widget _buildPlayer(double cellSize) {
-    return Positioned(
-      left: (_playerCol * cellSize) + (cellSize * 0.1), // Center the player horizontally
-      top: (_playerRow * cellSize) + (cellSize * 0.1) +163,  // Center the player vertically
-      child: Container(
-        width: cellSize * 0.8, // Player size
-        height: cellSize * 0.8,
-        decoration: BoxDecoration(
-          color: Colors.blue,
-          borderRadius: BorderRadius.circular(8),
-        ),
+    Widget _buildPlayer(double cellSize) {
+  return Positioned(
+    left: _playerCol * cellSize,  // Player's horizontal position
+    top: _playerRow * cellSize,   // Player's vertical position
+    child: Container(
+      width: cellSize * 0.8,  // Set the player's size
+      height: cellSize * 0.8,
+      decoration: BoxDecoration(
+        color: Colors.blue,
+        borderRadius: BorderRadius.circular(8),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
 
 enum Direction { up, down, left, right }

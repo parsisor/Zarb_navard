@@ -1,18 +1,17 @@
 import 'package:flame/components.dart';
-import 'char.dart'; // Import the WhiteRectangle class
 import 'game.dart';
-import 'obstacle.dart'; // Import the Obstacle class
+import 'obstacle.dart';
+import 'player.dart';
 
-class CollisionDetection extends Component with HasGameRef<ZarbGame> {
-  final SpriteComponent player; // Reference to the player (white rectangle)
+class CustomCollisionDetection extends Component with HasGameRef<ZarbGame> {
+  final Player player; // Reference to the player (custom class)
 
-  CollisionDetection(this.player);
+  CustomCollisionDetection(this.player);
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    
     bool isTouchingObstacle = false;
 
     for (final obstacle in gameRef.children.whereType<Obstacle>()) {
@@ -26,11 +25,8 @@ class CollisionDetection extends Component with HasGameRef<ZarbGame> {
       }
     }
 
-    
     if (!isTouchingObstacle && gameRef.isCollisionHandled) {
       gameRef.isCollisionHandled = false;
     }
   }
-
-  
 }

@@ -1,12 +1,19 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flame/collisions.dart';
+import 'package:flame/events.dart';
+
+import 'collision.dart'; // Your custom collision detection
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'obstacle.dart';
-import 'collision.dart';
 import 'timer_bar.dart';
 import 'lives_display.dart';
 import 'score_display.dart';
+import 'package:flame_audio/flame_audio.dart';
+import 'package:flutter/material.dart'; // For TextStyle and Colors
+import 'player.dart'; // Import your new player class
+
 
 class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
   SpriteComponent bg1;
@@ -19,8 +26,7 @@ class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
     this.speed = 100.0,
   })  : bg1 = SpriteComponent(sprite: backgroundImage, size: size),
         bg2 = SpriteComponent(sprite: backgroundImage, size: size) {
-    bg2.position = Vector2(
-        0, -size.y); 
+    bg2.position = Vector2(0, -size.y);
   }
 
   @override
@@ -37,16 +43,19 @@ class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
     bg2.position.y += speed * dt;
 
     if (bg1.position.y >= gameRef.size.y) {
-      bg1.position.y = bg2.position.y - bg1.size.y; 
+      bg1.position.y = bg2.position.y - bg1.size.y;
     }
 
     if (bg2.position.y >= gameRef.size.y) {
-      bg2.position.y = bg1.position.y - bg2.size.y; 
+      bg2.position.y = bg1.position.y - bg2.size.y;
     }
   }
 }
 
-class ZarbGame extends FlameGame {
+class ZarbGame extends FlameGame with PanDetector {
+  Player? player; // Change this to use Player
+  Vector2 playerPosition = Vector2(100, 100); // Initialize player position
+  bool isGameInitialized = false;
   bool shouldSpawnObstacles = true;
   Timer? obstacleTimer;
   final Random random = Random();
@@ -55,11 +64,14 @@ class ZarbGame extends FlameGame {
   late int correctAnswer;
   bool isCollisionHandled = false;
   TimerBar? timerBar;
-  int lives = 3; 
+  int lives = 3;
   int score = 0;
-  LivesDisplay? livesDisplay; 
-  ScoreDisplay? scoreDisplay; 
+  LivesDisplay? livesDisplay;
+  ScoreDisplay? scoreDisplay;
   double ospeed = 150;
+  Timer? messageDisplayTimer;
+  late TextComponent levelMessage;
+
 
   @override
   Future<void> onLoad() async {
@@ -72,17 +84,40 @@ class ZarbGame extends FlameGame {
       speed: 100.0,
     );
     add(scrollingBackground);
-    
-    final playerImage = await loadSprite('character.png');
-    final player = SpriteComponent(
-      sprite: playerImage,
-      size: Vector2(160.0, 160.0),
-      position:
-          Vector2((size.x / 2) - 100.0, size.y / 2 ), 
-    );
-    add(player); 
 
-    add(CollisionDetection(player));
+    FlameAudio.bgm.initialize();
+    FlameAudio.bgm.play('Juhani Junkala [Retro Game Music Pack] Level 1.wav',
+        volume: 0.5);
+
+     final playerImage = await loadSprite('character.png');
+    player = Player(
+      sprite: playerImage,
+      position: Vector2((size.x - 160.0) / 2, size.y / 2 + 200), // Centered on x-axis
+    );
+    
+    add(player!);
+
+    add(CustomCollisionDetection(player!));
+
+
+  levelMessage = TextComponent(
+    text: '', // Start with empty text
+    position: Vector2(size.x / 2 - 100, 50), // Set position
+    textRenderer: TextPaint(
+      style: TextStyle(
+        fontSize: 36,
+        color: Colors.white,
+      ),
+    ),
+  );
+
+  add(levelMessage); // Add to the game component tree
+
+  // Adjust properties
+  levelMessage.priority = 1; // Ensure it renders above other components
+  levelMessage.scale = Vector2.zero(); // Initially hide it by scaling to zero
+
+    
 
     livesDisplay = LivesDisplay(lives: lives);
     add(livesDisplay!);
@@ -91,7 +126,48 @@ class ZarbGame extends FlameGame {
     add(scoreDisplay!);
 
     startObstacleSpawning();
+
+    isGameInitialized = true;
+
+    showMessage("مرحله اول");
   }
+
+
+
+   void showMessage(String message) {
+  levelMessage.text = message;
+  levelMessage.scale = Vector2.all(1.0); // Show the message by scaling to full size
+
+  // Hide the message after 2 seconds
+  messageDisplayTimer?.stop();
+  messageDisplayTimer = Timer(2.0, onTick: () {
+    levelMessage.scale = Vector2.zero(); // Hide the message by scaling to zero
+  });
+  messageDisplayTimer?.start();
+}
+
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    messageDisplayTimer?.update(dt);
+
+    // Display messages based on score
+    if (score == 7) {
+      showMessage("مرحله دوم");
+    } else if (score == 21) {
+      showMessage("مرحله سوم");
+    }
+    // Add more 
+  }
+
+  @override
+  void onPanUpdate(DragUpdateInfo info) {
+    if (player != null) {
+      player!.position.add(info.delta.global);
+    }
+  }
+
 
   void startObstacleSpawning() {
     shouldSpawnObstacles = true;
@@ -99,22 +175,22 @@ class ZarbGame extends FlameGame {
   }
 
   void spawnObstacleWithRandomDelay() {
-    if (!shouldSpawnObstacles) return; 
+    if (!shouldSpawnObstacles) return;
 
     int randomDelay = 700 + random.nextInt(3000);
 
     Future.delayed(Duration(milliseconds: randomDelay), () {
-      if (!shouldSpawnObstacles) return; 
+      if (!shouldSpawnObstacles) return;
 
       spawnObstacle();
-      spawnObstacleWithRandomDelay(); 
+      spawnObstacleWithRandomDelay();
     });
   }
 
   void spawnObstacle() {
     add(Obstacle(
-      speed: ospeed, 
-      size: Vector2(60.0, 60.0), 
+      speed: ospeed,
+      size: Vector2(60.0, 60.0),
     ));
   }
 
@@ -152,6 +228,11 @@ class ZarbGame extends FlameGame {
           operator = '+';
           correctAnswer = num1 * num2 + additionalNum;
         } else {
+          // Ensure the multiplication result is greater than or equal to additionalNum
+          while (num1 * num2 < additionalNum) {
+            num1 = random.nextInt(10) + 1;
+            num2 = random.nextInt(10) + 1;
+          }
           operator = '-';
           correctAnswer = num1 * num2 - additionalNum;
         }
@@ -183,7 +264,7 @@ class ZarbGame extends FlameGame {
   }
 
   void incrementScore() {
-    scoreDisplay?.updateScore(100); 
+    scoreDisplay?.updateScore(100);
     score++;
   }
 

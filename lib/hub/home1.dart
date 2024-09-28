@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ZarbGame game = ZarbGame(); // Store game instance here
   @override
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width > 600; 
@@ -186,15 +187,18 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (title == 'ضرب نورد') {
           navigateToPage(
             context,
-            GameWidget(
-              game: ZarbGame(),
-              overlayBuilderMap: {
-                'MultiplicationOverlay': (context, game) => MultiplicationOverlay(game: game as ZarbGame),
-                'LossOverlay': (context, game) => LossOverlay(game: game as ZarbGame),
-              },
-            ),
-            AxisDirection.right,
-          );
+            GestureDetector(                
+                child: GameWidget(
+                  game: ZarbGame(),
+                  overlayBuilderMap: {
+                    'MultiplicationOverlay': (context, game) => MultiplicationOverlay(game: game as ZarbGame),
+                    'LossOverlay': (context, game) => LossOverlay(game: game as ZarbGame),
+                  },
+                ),
+              
+              ),
+              AxisDirection.right,
+            );
         }
       },
       child: buildCardFront(title, iconPath, isTablet, isFeatured),
