@@ -19,7 +19,7 @@ class CustomCollisionDetection extends Component with HasGameRef<ZarbGame> {
         isTouchingObstacle = true;
 
         if (!gameRef.isCollisionHandled) {
-          gameRef.handleCollision(); 
+          gameRef.handleCollision(obstacle); 
           break; 
         }
       }

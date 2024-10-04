@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:flame/collisions.dart';
 import 'package:flame/events.dart';
-
+import 'package:flutter/material.dart';
 import 'collision.dart'; // Your custom collision detection
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
@@ -11,21 +10,24 @@ import 'timer_bar.dart';
 import 'lives_display.dart';
 import 'score_display.dart';
 import 'package:flame_audio/flame_audio.dart';
-import 'package:flutter/material.dart'; // For TextStyle and Colors
+import 'package:zarb_navard_game/hub/home1.dart';
 import 'player.dart'; // Import your new player class
 
 
 class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
   SpriteComponent bg1;
   SpriteComponent bg2;
+  List<Sprite> backgrounds;
+  int currentBackgroundIndex = 0;
   double speed;
+  
 
   ScrollingBackground({
-    required Sprite backgroundImage,
+    required this.backgrounds, // Accept multiple backgrounds
     required Vector2 size,
     this.speed = 100.0,
-  })  : bg1 = SpriteComponent(sprite: backgroundImage, size: size),
-        bg2 = SpriteComponent(sprite: backgroundImage, size: size) {
+  })  : bg1 = SpriteComponent(sprite: backgrounds[0], size: size),
+        bg2 = SpriteComponent(sprite: backgrounds[0], size: size) {
     bg2.position = Vector2(0, -size.y);
   }
 
@@ -50,9 +52,17 @@ class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
       bg2.position.y = bg1.position.y - bg2.size.y;
     }
   }
+
+  void changeBackground(int index) {
+    currentBackgroundIndex = index;
+    bg1.sprite = backgrounds[index];
+    bg2.sprite = backgrounds[index];
+  }
 }
 
+
 class ZarbGame extends FlameGame with PanDetector {
+  
   Player? player; // Change this to use Player
   Vector2 playerPosition = Vector2(100, 100); // Initialize player position
   bool isGameInitialized = false;
@@ -66,58 +76,60 @@ class ZarbGame extends FlameGame with PanDetector {
   TimerBar? timerBar;
   int lives = 3;
   int score = 0;
+  ScrollingBackground? scrollingBackground;
   LivesDisplay? livesDisplay;
   ScoreDisplay? scoreDisplay;
   double ospeed = 150;
   Timer? messageDisplayTimer;
   late TextComponent levelMessage;
 
-
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    final backgroundImage = await loadSprite('background.jpg');
-    final scrollingBackground = ScrollingBackground(
-      backgroundImage: backgroundImage,
+
+    final background1 = await loadSprite('background.jpg');
+    final background2 = await loadSprite('background2.jpg');
+    final background3 = await loadSprite('background3.jpg');
+
+    scrollingBackground = ScrollingBackground(
+      backgrounds: [background1, background2, background3],
       size: Vector2(size.x, size.y),
       speed: 100.0,
     );
-    add(scrollingBackground);
+    add(scrollingBackground!);
 
     FlameAudio.bgm.initialize();
     FlameAudio.bgm.play('Juhani Junkala [Retro Game Music Pack] Level 1.wav',
         volume: 0.5);
 
-     final playerImage = await loadSprite('character.png');
+    final playerImage = await loadSprite('character.png');
     player = Player(
       sprite: playerImage,
-      position: Vector2((size.x - 160.0) / 2, size.y / 2 + 200), // Centered on x-axis
+      position:
+          Vector2((size.x - 160.0) / 2, size.y / 2 + 200), // Centered on x-axis
     );
-    
+
     add(player!);
 
     add(CustomCollisionDetection(player!));
 
-
-  levelMessage = TextComponent(
-    text: '', // Start with empty text
-    position: Vector2(size.x / 2 - 100, 50), // Set position
-    textRenderer: TextPaint(
-      style: TextStyle(
-        fontSize: 36,
-        color: Colors.white,
+    levelMessage = TextComponent(
+      text: '', // Start with empty text
+      position: Vector2(size.x / 2 - 100, 50), // Set position
+      textRenderer: TextPaint(
+        style: TextStyle(
+          fontSize: 36,
+          color: Colors.white,
+        ),
       ),
-    ),
-  );
+    );
 
-  add(levelMessage); // Add to the game component tree
+    add(levelMessage); // Add to the game component tree
 
-  // Adjust properties
-  levelMessage.priority = 1; // Ensure it renders above other components
-  levelMessage.scale = Vector2.zero(); // Initially hide it by scaling to zero
-
-    
+    // Adjust properties
+    levelMessage.priority = 1; // Ensure it renders above other components
+    levelMessage.scale = Vector2.zero(); // Initially hide it by scaling to zero
 
     livesDisplay = LivesDisplay(lives: lives);
     add(livesDisplay!);
@@ -132,20 +144,22 @@ class ZarbGame extends FlameGame with PanDetector {
     showMessage("مرحله اول");
   }
 
+  void showMessage(String message) {
+    levelMessage.text = message;
+    levelMessage.scale =
+        Vector2.all(1.0); // Show the message by scaling to full size
 
+    // Center the message on the x-axis based on its width
+    levelMessage.position.x = (size.x - levelMessage.size.x) / 2;
 
-   void showMessage(String message) {
-  levelMessage.text = message;
-  levelMessage.scale = Vector2.all(1.0); // Show the message by scaling to full size
-
-  // Hide the message after 2 seconds
-  messageDisplayTimer?.stop();
-  messageDisplayTimer = Timer(2.0, onTick: () {
-    levelMessage.scale = Vector2.zero(); // Hide the message by scaling to zero
-  });
-  messageDisplayTimer?.start();
-}
-
+    // Hide the message after 2 seconds
+    messageDisplayTimer?.stop();
+    messageDisplayTimer = Timer(2.0, onTick: () {
+      levelMessage.scale =
+          Vector2.zero(); // Hide the message by scaling to zero
+    });
+    messageDisplayTimer?.start();
+  }
 
   @override
   void update(double dt) {
@@ -153,12 +167,14 @@ class ZarbGame extends FlameGame with PanDetector {
     messageDisplayTimer?.update(dt);
 
     // Display messages based on score
-    if (score == 7) {
+    if (score == 15) {
       showMessage("مرحله دوم");
-    } else if (score == 21) {
+      scrollingBackground?.changeBackground(1); // Switch to background2.jpg
+    } else if (score == 35) {
       showMessage("مرحله سوم");
+      scrollingBackground?.changeBackground(2); // Switch to background3.jpg
     }
-    // Add more 
+    // Add more
   }
 
   @override
@@ -168,7 +184,6 @@ class ZarbGame extends FlameGame with PanDetector {
     }
   }
 
-
   void startObstacleSpawning() {
     shouldSpawnObstacles = true;
     spawnObstacleWithRandomDelay();
@@ -177,7 +192,7 @@ class ZarbGame extends FlameGame with PanDetector {
   void spawnObstacleWithRandomDelay() {
     if (!shouldSpawnObstacles) return;
 
-    int randomDelay = 700 + random.nextInt(3000);
+    int randomDelay = 700 + random.nextInt(2000);
 
     Future.delayed(Duration(milliseconds: randomDelay), () {
       if (!shouldSpawnObstacles) return;
@@ -208,12 +223,12 @@ class ZarbGame extends FlameGame with PanDetector {
     int num1, num2, additionalNum = 0;
     String operator = '+';
 
-    if (score * 100 < 700) {
+    if (score * 100 < 1500) {
       num1 = random.nextInt(9) + 1;
       num2 = random.nextInt(5) + 1;
       correctAnswer = num1 * num2;
       currentProblem = '$num1 × $num2 = ?';
-    } else if (score * 100 >= 700 && score * 100 <= 2000) {
+    } else if (score * 100 >= 1500 && score * 100 <= 3500) {
       num1 = random.nextInt(10) + 1;
       num2 = random.nextInt(10) + 1;
       correctAnswer = num1 * num2;
@@ -278,7 +293,6 @@ class ZarbGame extends FlameGame with PanDetector {
   void resetGameAfterCorrectAnswer() {
     overlays.remove('MultiplicationOverlay');
     incrementScore();
-    resumeGame();
     ospeed = ospeed + ospeed / 100;
     timerBar?.removeFromParent();
     timerBar = null;
@@ -310,7 +324,6 @@ class ZarbGame extends FlameGame with PanDetector {
 
   void resetGameAfterIncorrectAnswer() {
     overlays.remove('MultiplicationOverlay');
-    resumeGame();
     timerBar?.removeFromParent();
     timerBar = null;
   }
@@ -341,17 +354,51 @@ class ZarbGame extends FlameGame with PanDetector {
     });
   }
 
-  void handleCollision() {
-    isCollisionHandled = true;
-    pauseGame();
-    generateNewProblem();
-    overlays.add('MultiplicationOverlay');
+  void stopMusicAndNavigate() {
+    FlameAudio.bgm.stop(); // Stop the background music
+    // Navigate back to HomeScreen
+    // Assuming you have a BuildContext available
+    // You might want to use a global key or a method to access the context
+    Navigator.of(gameRef.context).pushReplacement(
+      MaterialPageRoute(builder: (context) => HomeScreen()),
+    );
+  }
 
-    if (timerBar == null) {
-      timerBar = TimerBar(totalTime: 8);
-      add(timerBar!);
-    } else {
-      timerBar!.resetTimer();
+  Widget buildBackButton() {
+    return Positioned(
+      top: 20,
+      left: 20,
+      child: FloatingActionButton(
+        onPressed: stopMusicAndNavigate,
+        child: Icon(Icons.arrow_back),
+      ),
+    );
+  }
+
+  void handleCollision(Obstacle obstacle) {
+    if (obstacle.obstacleType == 'meteor_1.png') {
+      // Player loses a life if hit by a meteor
+      loseLife();
+      obstacle.removeFromParent(); // Remove the obstacle after the collision
+    } else if(obstacle.obstacleType == 'planet_Dx.png' || obstacle.obstacleType == 'planet_D_2x.png' || obstacle.obstacleType == 'planet_D_3x.png' || obstacle.obstacleType == 'planet_D_4x.png') {
+      isCollisionHandled = true;
+      obstacle.removeFromParent(); // Remove the obstacle after the collision
+      overlays.remove('MultiplicationOverlay');
+      generateNewProblem();
+      overlays.add('MultiplicationOverlay');
+
+      if (timerBar == null && ( score * 100 <= 3500)) {
+        timerBar = TimerBar(totalTime: 8);
+        add(timerBar!);
+      }else if(timerBar == null && (score * 100 >= 3500))
+      {
+        timerBar = TimerBar(totalTime: 12);
+        add(timerBar!);
+      } 
+      
+      else {
+        timerBar!.resetTimer();
+      }
     }
   }
 }

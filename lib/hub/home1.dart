@@ -9,6 +9,7 @@ import 'package:zarb_navard_game/hub/reghabat/reghabat.dart';
 import 'package:zarb_navard_game/platformer_game/game.dart';
 import 'package:zarb_navard_game/platformer_game/overlay.dart';
 import 'package:zarb_navard_game/puzzels/game.dart';
+import 'package:flame_audio/flame_audio.dart';
  
 
 class HomeScreen extends StatefulWidget {
@@ -20,8 +21,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ZarbGame game = ZarbGame(); // Store game instance here
+  
   @override
   Widget build(BuildContext context) {
+    
     final isTablet = MediaQuery.of(context).size.width > 600; 
     final theme = Theme.of(context);
     
@@ -187,8 +190,10 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (title == 'ضرب نورد') {
           navigateToPage(
             context,
+            
             GestureDetector(                
                 child: GameWidget(
+                  
                   game: ZarbGame(),
                   overlayBuilderMap: {
                     'MultiplicationOverlay': (context, game) => MultiplicationOverlay(game: game as ZarbGame),

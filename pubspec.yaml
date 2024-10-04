@@ -52,12 +52,18 @@ flutter:
     - assets/LeaderBoard_assets/
     - assets/LeaderBoard_assets/character3.png
     - assets/images/background.jpg
+    - assets/images/background2.jpg
+    - assets/images/background3.jpg
     - assets/images/character.png
     - assets/images/meteor_1.png
     - assets/images/planet_D.png
     - assets/images/planet_D_2.png
     - assets/images/planet_D_3.png
     - assets/images/planet_D_4.png
+    - assets/images/planet_Dx.png
+    - assets/images/planet_D_2x.png
+    - assets/images/planet_D_3x.png
+    - assets/images/planet_D_4x.png
     - assets/logo.png
 
   fonts:

@@ -28,8 +28,7 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
   @override
   void initState() {
     super.initState();
-    _generatePlayer1Question();
-    _generatePlayer2Question();
+    _generateQuestions();
     _startTimer();
   }
 
@@ -66,8 +65,7 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text("پایان بازی"),
-        content: Text(
-            "$winner\nامتیاز بازیکن ۱: $player1Score\nامتیاز بازیکن ۲: $player2Score"),
+        content: Text("$winner\nامتیاز بازیکن ۱: $player1Score\nامتیاز بازیکن ۲: $player2Score"),
         actions: [
           TextButton(
             onPressed: () {
@@ -86,48 +84,58 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
       player1Score = 0;
       player2Score = 0;
       _timeLeft = 30;
-      _generatePlayer1Question();
-      _generatePlayer2Question();
+      _generateQuestions();
       _startTimer();
     });
   }
 
-  void _generatePlayer1Question() {
+  void _generateQuestions() {
     int num1 = random.nextInt(10) + 1;
     int num2 = random.nextInt(10) + 1;
     player1Question = '$num1 × $num2';
     player1Answer = num1 * num2;
     player1Answers = _getShuffledAnswers(player1Answer);
-  }
 
-  void _generatePlayer2Question() {
-    int num1 = random.nextInt(10) + 1;
-    int num2 = random.nextInt(10) + 1;
+    num1 = random.nextInt(10) + 1;
+    num2 = random.nextInt(10) + 1;
     player2Question = '$num1 × $num2';
     player2Answer = num1 * num2;
     player2Answers = _getShuffledAnswers(player2Answer);
   }
 
-
   void _checkPlayer1Answer(int answer) {
-    setState(() {
-      if (answer == player1Answer) {
+    if (answer == player1Answer) {
+      setState(() {
         player1Score++;
-      } else {
+      });
+    } else {
+      setState(() {
         player2Score++;
-      }
-      _generatePlayer1Question(); // Only regenerate player 1's question
+      });
+    }
+
+    Future.delayed(Duration(seconds: 1), () {
+      setState(() {
+        _generateQuestions();
+      });
     });
   }
 
   void _checkPlayer2Answer(int answer) {
-    setState(() {
-      if (answer == player2Answer) {
+    if (answer == player2Answer) {
+      setState(() {
         player2Score++;
-      } else {
+      });
+    } else {
+      setState(() {
         player1Score++;
-      }
-      _generatePlayer2Question(); // Only regenerate player 2's question
+      });
+    }
+
+    Future.delayed(Duration(seconds: 1), () {
+      setState(() {
+        _generateQuestions();
+      });
     });
   }
 
@@ -143,82 +151,82 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
     answerList.shuffle();
     return answerList;
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Transform.rotate(
-                    angle: pi, // 180 degrees rotation
-                    child: Column(
-                      children: [
-                        _buildPlayerSection(
-                          playerName: "بازیکن ۱",
-                          question: player1Question,
-                          score: player1Score,
-                          answers: player1Answers,
-                          isPlayer1: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Add a SizedBox for spacing
-                SizedBox(height: 30), // Adjust the height as needed
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildPlayerSection(
-                        playerName: "بازیکن ۲",
-                        question: player2Question,
-                        score: player2Score,
-                        answers: player2Answers,
-                        isPlayer1: false,
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                    child: Transform.rotate(
+                      angle: pi, // 180 degrees rotation
+                      child: Column(
+                        children: [
+                          _buildPlayerSection(
+                            playerName: "بازیکن ۱",
+                            question: player1Question,
+                            score: player1Score,
+                            answers: player1Answers,
+                            isPlayer1: true,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    "زمان باقی‌مانده: $_timeLeft",
-                    style: TextStyle(
-                      fontSize: 30,
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
+              // Add a SizedBox for spacing
+              SizedBox(height: 30), // Adjust the height as needed
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildPlayerSection(
+                      playerName: "بازیکن ۲",
+                      question: player2Question,
+                      score: player2Score,
+                      answers: player2Answers,
+                      isPlayer1: false,
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "زمان باقی‌مانده: $_timeLeft",
+                  style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          left: 10,
+          top: MediaQuery.of(context).size.height / 2 - 20,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.purple,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
           ),
-          Positioned(
-            left: 10,
-            top: MediaQuery.of(context).size.height / 2 - 20,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.purple,
-              ),
-              child: IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildPlayerSection({
     required String playerName,
@@ -231,8 +239,7 @@ class _MathRaceScreenState extends State<MathRaceScreen> {
       children: [
         Text(
           playerName,
-          style: TextStyle(
-              fontSize: 28, fontWeight: FontWeight.bold, color: Colors.purple),
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.purple),
         ),
         SizedBox(height: 10),
         Text(
