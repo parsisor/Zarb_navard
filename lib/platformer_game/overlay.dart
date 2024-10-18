@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:zarb_navard_game/hub/home1.dart';
 import 'game.dart'; 
 
 class MultiplicationOverlay extends StatelessWidget {
@@ -92,6 +93,49 @@ class LossOverlay extends StatelessWidget {
               game.overlays.remove('LossOverlay'); 
             },
             child: const Text('دوباره بازی کن'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class WinningOverlay extends StatelessWidget {
+  final ZarbGame game;
+
+  const WinningOverlay({Key? key, required this.game}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'شما برنده شدید',
+            style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold, color: Colors.green),
+          ),
+          const SizedBox(height: 20.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  game.resumeGame(); 
+                },
+                child: const Text('ادامه بازی'),
+              ),
+              const SizedBox(width: 20.0),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    (route) => false,
+                  );
+                },
+                child: const Text('خروج'),
+              ),
+            ],
           ),
         ],
       ),

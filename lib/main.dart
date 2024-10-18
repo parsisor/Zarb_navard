@@ -6,6 +6,7 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:zarb_navard_game/puzzels/models/board_adapter.dart';
 import 'package:flame_audio/flame_audio.dart'; // Import Flame audio
 
+
 import 'hub/home1.dart'; // Your home screen.
 
 void main() async {
@@ -70,7 +71,7 @@ class MyApp extends StatelessWidget {
       initial: AdaptiveThemeMode.system,
       builder: (theme, darkTheme) => PopScope(
         onPopInvoked: (bool didPop) {
-          // Stop background music when the back button is pressed
+
           FlameAudio.bgm.stop();
         },
         child: MaterialApp(

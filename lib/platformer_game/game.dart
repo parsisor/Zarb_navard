@@ -10,9 +10,8 @@ import 'timer_bar.dart';
 import 'lives_display.dart';
 import 'score_display.dart';
 import 'package:flame_audio/flame_audio.dart';
-import 'package:zarb_navard_game/hub/home1.dart';
 import 'player.dart'; // Import your new player class
-
+import 'package:zarb_navard_game/platformer_game/overlay.dart';
 
 class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
   SpriteComponent bg1;
@@ -20,7 +19,6 @@ class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
   List<Sprite> backgrounds;
   int currentBackgroundIndex = 0;
   double speed;
-  
 
   ScrollingBackground({
     required this.backgrounds, // Accept multiple backgrounds
@@ -60,9 +58,9 @@ class ScrollingBackground extends Component with HasGameRef<ZarbGame> {
   }
 }
 
-
 class ZarbGame extends FlameGame with PanDetector {
-  
+  bool isMusicPlaying = true; // Initially, the music is playing.
+  int x = 0;
   Player? player; // Change this to use Player
   Vector2 playerPosition = Vector2(100, 100); // Initialize player position
   bool isGameInitialized = false;
@@ -82,11 +80,17 @@ class ZarbGame extends FlameGame with PanDetector {
   double ospeed = 150;
   Timer? messageDisplayTimer;
   late TextComponent levelMessage;
+  Timer? scoreIncrementTimer; // New Timer for score increment
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
+    overlays.addEntry('MultiplicationOverlay',
+        (_, game) => MultiplicationOverlay(game: this));
+    overlays.addEntry('LossOverlay', (_, game) => LossOverlay(game: this));
+    overlays.addEntry(
+        'WinningOverlay', (_, game) => WinningOverlay(game: this));
 
     final background1 = await loadSprite('background.jpg');
     final background2 = await loadSprite('background2.jpg');
@@ -102,6 +106,8 @@ class ZarbGame extends FlameGame with PanDetector {
     FlameAudio.bgm.initialize();
     FlameAudio.bgm.play('Juhani Junkala [Retro Game Music Pack] Level 1.wav',
         volume: 0.5);
+
+    isMusicPlaying = false;
 
     final playerImage = await loadSprite('character.png');
     player = Player(
@@ -142,23 +148,39 @@ class ZarbGame extends FlameGame with PanDetector {
     isGameInitialized = true;
 
     showMessage("مرحله اول");
+
+    startScoreIncrement(); // Start the score increment when the game starts
   }
 
-  void showMessage(String message) {
-    levelMessage.text = message;
-    levelMessage.scale =
-        Vector2.all(1.0); // Show the message by scaling to full size
+  // Start the timer to increment score by 10 points every second
+  void startScoreIncrement() {
+    scoreIncrementTimer = Timer(1, onTick: () {
+      incrementScoreBy(10);
+    }, repeat: true); // Repeat every 1 second
+    scoreIncrementTimer!.start(); // Start the timer
+  }
 
-    // Center the message on the x-axis based on its width
+  void incrementScoreBy(int points) {
+    score += points;
+    scoreDisplay?.updateScore(
+        points); // Only update the score display by the increment, not the total score
+  }
+
+  bool isMessageVisible = false;
+
+  void showMessage(String message) {
+    if (isMessageVisible) return; // Prevent overlapping message display
+
+    isMessageVisible = true;
+    levelMessage.text = message;
+    levelMessage.scale = Vector2.all(1.0);
+
     levelMessage.position.x = (size.x - levelMessage.size.x) / 2;
 
-    // Hide the message after 2 seconds
-    messageDisplayTimer?.stop();
-    messageDisplayTimer = Timer(2.0, onTick: () {
-      levelMessage.scale =
-          Vector2.zero(); // Hide the message by scaling to zero
+    Future.delayed(Duration(seconds: 2), () {
+      levelMessage.scale = Vector2.zero();
+      isMessageVisible = false; // Allow new message after hiding
     });
-    messageDisplayTimer?.start();
   }
 
   @override
@@ -166,15 +188,24 @@ class ZarbGame extends FlameGame with PanDetector {
     super.update(dt);
     messageDisplayTimer?.update(dt);
 
+    if (score >= 5000 && x == 0) {
+      pauseGame();
+      if (!overlays.isActive('WinningOverlay')) {
+        overlays.add('WinningOverlay');
+      }
+      x++;
+    }
+
     // Display messages based on score
-    if (score == 15) {
-      showMessage("مرحله دوم");
-      scrollingBackground?.changeBackground(1); // Switch to background2.jpg
-    } else if (score == 35) {
+    if (score >= 3500) {
       showMessage("مرحله سوم");
       scrollingBackground?.changeBackground(2); // Switch to background3.jpg
+    } else if (score >= 1500) {
+      showMessage("مرحله دوم");
+      scrollingBackground?.changeBackground(1); // Switch to background2.jpg
     }
-    // Add more
+
+    scoreIncrementTimer!.update(dt); // Update the score increment timer
   }
 
   @override
@@ -223,27 +254,34 @@ class ZarbGame extends FlameGame with PanDetector {
     int num1, num2, additionalNum = 0;
     String operator = '+';
 
-    if (score * 100 < 1500) {
+    if (score < 1500) {
+      // Use score directly, not score * 100
+      // Basic multiplication for early game
       num1 = random.nextInt(9) + 1;
       num2 = random.nextInt(5) + 1;
       correctAnswer = num1 * num2;
       currentProblem = '$num1 × $num2 = ?';
-    } else if (score * 100 >= 1500 && score * 100 <= 3500) {
+    } else if (score >= 1500 && score <= 3500) {
+      // Keep consistent with score
+      // Intermediate multiplication for mid-game
       num1 = random.nextInt(10) + 1;
       num2 = random.nextInt(10) + 1;
       correctAnswer = num1 * num2;
       currentProblem = '$num1 × $num2 = ?';
     } else {
+      // Advanced problems when score is greater than 3500
       if (random.nextBool()) {
+        // Generate problems with addition or subtraction
         num1 = random.nextInt(10) + 1;
         num2 = random.nextInt(10) + 1;
         additionalNum = random.nextInt(30) + 1;
 
         if (random.nextBool()) {
+          // Addition
           operator = '+';
           correctAnswer = num1 * num2 + additionalNum;
         } else {
-          // Ensure the multiplication result is greater than or equal to additionalNum
+          // Subtraction, ensure correctAnswer is not negative
           while (num1 * num2 < additionalNum) {
             num1 = random.nextInt(10) + 1;
             num2 = random.nextInt(10) + 1;
@@ -254,6 +292,7 @@ class ZarbGame extends FlameGame with PanDetector {
 
         currentProblem = '$num1 × $num2 $operator ${additionalNum.abs()} = ?';
       } else {
+        // Multiplication only
         num1 = random.nextInt(6) + 10;
         num2 = random.nextInt(5) + 1;
         correctAnswer = num1 * num2;
@@ -261,6 +300,7 @@ class ZarbGame extends FlameGame with PanDetector {
       }
     }
 
+    // Generate answer options
     answerOptions = [correctAnswer];
     while (answerOptions.length < 4) {
       int wrongAnswer = random.nextInt(100);
@@ -272,22 +312,28 @@ class ZarbGame extends FlameGame with PanDetector {
   }
 
   void pauseGame() {
-    for (final obstacle in children.whereType<Obstacle>()) {
-      obstacle.speed = 0;
-    }
-    stopObstacleSpawning();
+  for (final obstacle in children.whereType<Obstacle>()) {
+    obstacle.speed = 0;
   }
+  shouldSpawnObstacles = false; // Stop spawning new obstacles
+  scoreIncrementTimer?.stop(); // Pause the score increment timer
+  timerBar?.pause(); // Pause the timer bar
+}
 
   void incrementScore() {
     scoreDisplay?.updateScore(100);
-    score++;
+    score = score + 100;
   }
 
   void resumeGame() {
+    overlays.remove('WinningOverlay'); // Ensure overlay is removed
     for (final obstacle in children.whereType<Obstacle>()) {
-      obstacle.speed = ospeed;
+      obstacle.speed = ospeed; // Ensure obstacle speed is restored
     }
-    startObstacleSpawning();
+    shouldSpawnObstacles = true; // Allow obstacle spawning again
+    spawnObstacleWithRandomDelay(); // Restart obstacle spawning
+    scoreIncrementTimer?.start(); // Resume the score increment timer
+    timerBar?.resume(); // Resume the timer bar
   }
 
   void resetGameAfterCorrectAnswer() {
@@ -309,7 +355,7 @@ class ZarbGame extends FlameGame with PanDetector {
   }
 
   void resetScore() {
-    scoreDisplay?.updateScore(-100 * score);
+    scoreDisplay?.updateScore(-1 * score);
   }
 
   void loseLife() {
@@ -346,6 +392,10 @@ class ZarbGame extends FlameGame with PanDetector {
     livesDisplay?.updateLives(lives);
     timerBar?.removeFromParent();
     timerBar = null;
+
+    // Reset background to the first one
+    scrollingBackground?.changeBackground(0);
+    showMessage("مرحله اول");
   }
 
   void clearObstacles() {
@@ -354,49 +404,28 @@ class ZarbGame extends FlameGame with PanDetector {
     });
   }
 
-  void stopMusicAndNavigate() {
-    FlameAudio.bgm.stop(); // Stop the background music
-    // Navigate back to HomeScreen
-    // Assuming you have a BuildContext available
-    // You might want to use a global key or a method to access the context
-    Navigator.of(gameRef.context).pushReplacement(
-      MaterialPageRoute(builder: (context) => HomeScreen()),
-    );
-  }
-
-  Widget buildBackButton() {
-    return Positioned(
-      top: 20,
-      left: 20,
-      child: FloatingActionButton(
-        onPressed: stopMusicAndNavigate,
-        child: Icon(Icons.arrow_back),
-      ),
-    );
-  }
-
   void handleCollision(Obstacle obstacle) {
     if (obstacle.obstacleType == 'meteor_1.png') {
       // Player loses a life if hit by a meteor
       loseLife();
       obstacle.removeFromParent(); // Remove the obstacle after the collision
-    } else if(obstacle.obstacleType == 'planet_Dx.png' || obstacle.obstacleType == 'planet_D_2x.png' || obstacle.obstacleType == 'planet_D_3x.png' || obstacle.obstacleType == 'planet_D_4x.png') {
+    } else if (obstacle.obstacleType == 'planet_Dx.png' ||
+        obstacle.obstacleType == 'planet_D_2x.png' ||
+        obstacle.obstacleType == 'planet_D_3x.png' ||
+        obstacle.obstacleType == 'planet_D_4x.png') {
       isCollisionHandled = true;
       obstacle.removeFromParent(); // Remove the obstacle after the collision
       overlays.remove('MultiplicationOverlay');
       generateNewProblem();
       overlays.add('MultiplicationOverlay');
 
-      if (timerBar == null && ( score * 100 <= 3500)) {
+      if (timerBar == null && (score * 100 <= 3500)) {
         timerBar = TimerBar(totalTime: 8);
         add(timerBar!);
-      }else if(timerBar == null && (score * 100 >= 3500))
-      {
+      } else if (timerBar == null && (score * 100 >= 3500)) {
         timerBar = TimerBar(totalTime: 12);
         add(timerBar!);
-      } 
-      
-      else {
+      } else {
         timerBar!.resetTimer();
       }
     }

@@ -2,6 +2,7 @@ import 'package:animations/animations.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:flame_audio/flame_audio.dart'; // Import Flame audio
 import 'package:zarb_navard_game/hub/Settings/settings.dart';
 import 'package:zarb_navard_game/hub/leader_board/leaderboard.dart';
 import 'package:zarb_navard_game/hub/maze/maze.dart';
@@ -9,7 +10,6 @@ import 'package:zarb_navard_game/hub/reghabat/reghabat.dart';
 import 'package:zarb_navard_game/platformer_game/game.dart';
 import 'package:zarb_navard_game/platformer_game/overlay.dart';
 import 'package:zarb_navard_game/puzzels/game.dart';
-import 'package:flame_audio/flame_audio.dart';
  
 
 class HomeScreen extends StatefulWidget {
@@ -21,10 +21,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ZarbGame game = ZarbGame(); // Store game instance here
-  
   @override
   Widget build(BuildContext context) {
-    
     final isTablet = MediaQuery.of(context).size.width > 600; 
     final theme = Theme.of(context);
     
@@ -57,7 +55,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             },
-          ),
+          ),IconButton(
+            
+            icon: Icon(game.isMusicPlaying ? Icons.music_note : Icons.music_off, size: 30),
+            onPressed: () {
+              setState(() {
+                if (game.isMusicPlaying) {
+                  FlameAudio.bgm.pause();
+                } else {
+                  FlameAudio.bgm.resume();
+                }
+                game.isMusicPlaying = !game.isMusicPlaying; // Toggle the music state.
+              });
+            },
+          )
         ],
       ),
       body: SingleChildScrollView(
@@ -190,10 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (title == 'ضرب نورد') {
           navigateToPage(
             context,
-            
             GestureDetector(                
                 child: GameWidget(
-                  
                   game: ZarbGame(),
                   overlayBuilderMap: {
                     'MultiplicationOverlay': (context, game) => MultiplicationOverlay(game: game as ZarbGame),
